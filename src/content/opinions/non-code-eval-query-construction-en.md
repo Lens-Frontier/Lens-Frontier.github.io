@@ -3,7 +3,7 @@ title: "How to Build Verifiable Queries for Evaluating Complex Text Tasks"
 lang: "en"
 translationKey: "synthetic-query-construction"
 date: 2026-05-29
-summary: "A practical guide to building verifiable eval queries for non-code text tasks."
+summary: "A practical guide to building eval queries for non-code text tasks, covering real workflows, context packages, scoring constraints, difficulty layering, and self-evolving evaluation sets."
 authors:
   - name: "Xinhui Huang"
     github: "ivyandbonjuice"
@@ -11,35 +11,27 @@ stance: "High-quality non-code evaluation sets cannot be built by piling up prom
 tags: ["evaluation", "query", "llm-as-a-judge", "benchmark"]
 ---
 
-Non-code tasks often create an illusion: since the output is all text, evaluation can only judge whether the writing is "good" or not.
+Non-code tasks often create an illusion: since the output is text, evaluation can only judge whether the writing is "good" or not.
 
-But once you start building an evaluation set, you find that the hard part is not that text lacks a standard answer. The hard part is that the **query itself often fails to define the task boundary clearly**. Queries that are too broad reduce Agent capability to Chatbot capability; queries packed with constraints but lacking a scoring structure make it impossible to attribute failures.
+But once you start building an evaluation set, you quickly find that the hard part is not that text lacks a standard answer. The hard part is that the **query itself often fails to define the task boundary clearly**. Overly broad queries reduce Agent capability to Chatbot capability. Queries packed with constraints but lacking a scoring structure make it impossible to attribute failures.
 
-Non-code tasks are not structureless. Their final deliverables usually take the form of scripts, reports, plans, or tables. What we need to evaluate is not just fluency, but whether the model can **actually get the job done** under complex constraints.
+This illusion leads to many mediocre evaluation sets. They look like collections of "exam questions", where a model can score well as long as the answer is fluent and well-structured. But in real deployments, the same model may still fail to deliver. The difficulty of evaluating non-code tasks is not that text has no standard answer. It is that **most queries fail to structure the real task's context dependencies, hard constraints, and failure modes**, making the model's capability boundary unobservable.
 
-This article focuses on one question: **how should queries in non-code evaluation sets be constructed?**
+A real eval query is not an ordinary prompt. It is not merely designed to make the model generate an answer. It is designed to expose the boundary of the model's capability.
 
-Here, a query is not an ordinary prompt. An ordinary prompt only needs to make the model generate an answer; an eval query needs to **expose the boundary of model capability**. It should include the real task intent, contextual dependencies, hard constraints, expected path, scoring points, and failure modes.
+## Layering and Identifying Task Value
 
-A good eval query is not about "asking in a more complicated way". It is about "measuring more clearly".
+Before writing a query, the first task is to determine how valuable the scenario is within the evaluation framework. Based on real-world complexity and degree of coupling with the environment, we can divide tasks into three levels:
 
-![Flow from real tasks to verifiable eval queries](../../assets/posts/opinions/non-code-eval-query-construction-en/query-synthesis-flow-en.webp)
+| Level | Definition | Evaluation value | Query example | Core capabilities |
+| --- | --- | --- | --- | --- |
+| L1 General knowledge | Simple knowledge summarization or text generation, such as "write return-service talking points." | Suitable for basic smoke tests, not as the core evaluation set | Prepare an e-commerce return and exchange communication template | Knowledge summarization, text generation |
+| L2 Scenario-customized | Contains personalized constraints, such as time window, specific product, or user goal. | The main body of non-code evaluation; can test constraint handling and risk judgment | I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. Help me design a negotiation plan | Scenario understanding, constraint handling, risk judgment |
+| L3 Closed-loop execution | **A decision task based on environmental materials**. The model must read data, integrate evidence, plan multiple steps, and produce executable deliverables. | The value core of the evaluation set | Based on the order, product-page snapshot, platform policy, and similar dispute cases, determine whether a partial refund is possible, and output talking points, evidence checklist, and escalation path | Data reading, evidence integration, multi-step planning, executable delivery |
 
----
+**The core problem with L1:** As long as the model is fluent and well-structured, it can easily get a high score. But this only tests whether the model can summarize. It cannot distinguish models that truly have planning and judgment capabilities.
 
-## 1. First decide: is this task worth turning into an eval?
-
-The first step in building a query is not writing the question. It is deciding which level the task belongs to, because the level determines its evaluation value.
-
-| Level | Query example | Core capability | Evaluation value |
-| --- | --- | --- | --- |
-| L1 General knowledge | Prepare a template for e-commerce return and exchange communication | Knowledge summarization, text generation | Suitable for basic smoke tests, not suitable as the core evaluation set |
-| L2 Scenario-customized | I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. Help me design a negotiation plan | Scenario understanding, constraint handling, risk judgment | Suitable as the main body of non-code text-task evals |
-| L3 Closed-loop execution | Based on the order, product-page snapshot, platform policy, and similar dispute cases, determine whether a partial refund is possible, and output talking points, evidence checklist, and escalation path | Data reading, evidence integration, multi-step planning, executable deliverables | Most suitable for Agent / complex text-task evals |
-
-**The core problem with L1:** As long as the model is fluent and well-structured, it can easily get a high score. But this only tests whether the model can summarize; it cannot distinguish models that truly have planning and judgment capabilities.
-
-**L2 starts to enter the value zone:** It requires the model to handle personalized constraints: time windows, product condition, user goals, likely merchant objections, and platform escalation paths. Each of these can become a potential scoring point.
+**L2 starts to enter the value zone:** It requires the model to handle personalized constraints: time windows, product condition, user goals, likely merchant objections, and platform escalation paths. Each of these can become a potential failure point.
 
 **L3 is where high-value evaluation samples appear:** It does not merely ask the model to "write suggestions". It requires the model to complete key judgments based on environmental materials: has the order really exceeded 7 days? Does the product page contain misleading material claims? Does the platform policy support partial refunds? Is the evidence sufficient to escalate the complaint?
 
@@ -55,19 +47,19 @@ The same topic across three levels:
 | E-commerce after-sales | Write return-communication talking points | Design a rights-protection plan for a down jacket leaking down after more than 7 days | Combine order, product page, platform rules, and precedents to output risk levels, talking points, evidence checklist, and escalation path |
 | Flight ticket changes | Explain refund and change rules for discounted tickets | Design a lowest-loss plan for changing a Beijing-Sanya round-trip itinerary | Combine original order, airline rules, remaining seat prices, and time windows to calculate costs and rank change/refund/rebook options |
 
----
-
-## 2. The structure of a good query: five indispensable elements
+## From "Writing Prompts" to "Building Task Packages"
 
 After identifying the level, we need to understand what an eval query is made of.
 
-Public evaluation sets such as OpenAI GDPval, Anthropic Agent Evals, and Kimi Claw Bench all point toward the same trend: moving from a "single prompt" to a "task package".
+Looking across mainstream Agent evaluation frameworks, such as OpenAI GDPval and Anthropic Agent Evals, we can see a clear trend: **moving from a "single prompt" to a "task package"**.
 
-The core idea of a task package is that the query is not just the sentence spoken by the user. It includes everything needed to complete the task.
+- **From "question" to "workflow":** Evaluation is no longer a single prompt. It becomes a real knowledge-work task that includes reference files, context, and environment state.
+- **From "deliverable" to "process trajectory":** Agent evaluation must include transcripts, tool calls, and environmental feedback. It is not enough for the model to claim that "the task is done"; we need to evaluate whether it called the right tools and whether it can recover when tools fail.
+- **The data flywheel effect:** High-quality queries are not invented from thin air. They come from bad cases in production traces. Adding real failed queries from production to the dataset for future regression testing is one of the current best practices for building evaluation sets.
 
-I define the standard structure of a non-code eval query as:
+The standard structure of a non-code eval query can be defined as:
 
-```txt
+```text
 query = user task
       + context package
       + expected deliverable
@@ -81,232 +73,221 @@ query = user task
 
 **Expected deliverable:** The output must be clear. "Give me some advice" is not a deliverable. "Output talking points by risk level, merchant-objection forecasts, and an evidence checklist" is.
 
-**Observable checks:** These fall into two categories: **hard constraints** (whether the answer mentions that the 7-day period has passed, whether it asks for additional evidence) and **soft quality** (whether the wording feels collaborative rather than confrontational). Hard constraints can be checked automatically; soft quality needs human evaluation or an LLM judge.
+**Observable checks:** These can be divided into two types: **hard constraints** (for example, whether the model mentions that more than 7 days have passed, or asks the user to supplement evidence) and **soft quality** (for example, whether the tone is collaborative rather than confrontational). Hard constraints can be checked automatically. Soft quality requires human review or an LLM judge.
 
-**Failure modes:** Pre-label where this query is expected to make the model fail. For example: applying a generic return template, promising that the user will definitely get a refund, or only writing talking points without giving an escalation path. These labels are both grading criteria for the grader and directions for evaluation iteration.
+**Failure modes:** Mark in advance where the query is expected to make the model fail. For example: directly applying a generic return-service template, promising that the user will definitely get a refund, or writing only talking points without an escalation path. These labels are both the basis for grading and the direction for evaluation iteration.
 
-> Agent-style evaluations also need to observe the **process trace**: whether the model actually called the right tools, whether it modified environmental state, and whether it recovered after tool failure. Saying "I completed it" and actually completing it are two different things.
+Agent evaluations also need to observe the **process trajectory**: whether the model actually called the correct tools, whether it changed the environment state, and whether it recovered after a tool failure. Saying "I have completed it" and actually completing it are two different things.
 
----
-
-## 3. Where queries come from: five sources with different value and cost
+## Query Sources and Value
 
 High-quality queries can come from five types of sources:
 
-| Source | Strengths | Risks | Suitable stage |
+| Source | Advantages | Risks | Suitable stage |
 | --- | --- | --- | --- |
-| Real user logs | Closest to the business, naturally representative | Requires anonymization; noisy | Core evaluation set, regression set |
-| Online bad cases | Directly correspond to model weaknesses; highly discriminative | Can cluster around a few failure types | Self-evolution, version regression |
-| Expert-written | Logically rigorous and controllable | Expensive; may not feel realistic enough | Cold-start MVE |
-| LLM-synthesized | Fast to scale, broad coverage | Homogeneous, templated, may leak answer structure | Candidate expansion; not suitable for direct inclusion |
-| Public benchmarks / industry cases | Useful for schema and coverage reference | May deviate from business scenarios | Building the initial taxonomy |
+| Real user logs | Closest to the business, naturally representative | Requires desensitization; noisy | Core evaluation set, regression set |
+| Online bad cases | Directly map to model weaknesses; high discriminative value | Can over-concentrate on a few failure types | Self-evolution, version regression |
+| Expert-written queries | Logically rigorous and controllable | Expensive; may not feel realistic enough | Cold-start MVE |
+| LLM synthesis | Fast scaling and broad coverage | Homogeneity, template-like style, possible leakage of answer structure | Candidate expansion only, not direct ingestion |
+| Public benchmarks / industry cases | Useful for learning schema and coverage | May deviate from the business scenario | Building the initial taxonomy |
 
-**Recommended ratios for cold start:**
+**Recommended ratios during cold start** (an experience-based heuristic I currently find reasonable):
 
-| Stage | Recommended ratio |
-| --- | --- |
-| 0-30 queries | 50% expert-written, 30% real logs / business feedback, 20% LLM-synthesized candidates |
-| 30-100 queries | 40% real logs, 30% bad cases, 20% expert-written, 10% LLM-synthesized |
-| After 100 queries | Mainly bad cases and production traces; experts handle cleaning, annotation, and gap filling |
+- 0-30 queries: expert-written 50% + real logs/business feedback 30% + LLM-synthesized candidates 20%
+- 30-100 queries: real logs 40% + bad cases 30% + expert-written 20% + LLM synthesis 10%
+- After 100 queries: mainly bad cases and production traces, with experts responsible for cleaning, labeling, and filling gaps
 
-The correct use of LLM synthesis is **candidate generation, not direct inclusion**: let the LLM generate query candidates in batches, then have humans filter, rewrite, add environmental materials, and write graders. If synthetic outputs are directly treated as gold data, the evaluation set will suffer from serious homogenization.
+I generally use LLM synthesis only to **generate candidates**, not to ingest queries directly. If synthetic queries are directly added to the evaluation set, the set quickly becomes homogeneous: the model learns one template, answers every task in that pattern, and you can no longer measure real capability.
 
----
+## Write Real Task Pressure, Not Just Longer Queries
 
-## 4. Write real task pressure into the query, not just more words
+The biggest risk for non-code evaluation sets is "textbook flavor": the query is so clean and well-behaved that the model can get a high score by generating a fluent paragraph.
 
-The biggest danger for non-code evaluation sets is a "textbook flavor": the query is written in a clean, orderly way, and the model can get a high score by generating a smooth paragraph.
+A textbook-flavored version:
 
-Textbook-flavored version:
+> Help me write a live-commerce script.
 
-> Help me write a livestream sales script.
+This query is too clean. In real business, a live-commerce script involves product selling points, prohibited terms, time limits, conversion goals, platform rules, and user audience. Write those pressures into the query:
 
-This query is too clean. Real business livestream scripts involve product selling points, prohibited words, duration limits, conversion goals, platform rules, and target audiences. Write those pressures into the query:
+> I need a 60-second live-commerce script for a foundation product targeting oily-skin commuters. It must create a pain-point conflict in the first 3 seconds, include an emotional turn every 15 seconds, and naturally mention the three selling points "8-hour wear", "does not oxidize", and "does not cake". It must not use absolute claims such as "the strongest", "number one", or "medical-grade". Output the script by timeline segment and mark host action cues.
 
-> I need to write a 60-second livestream spoken script for a foundation aimed at oily-skin commuters. It must create a pain-point conflict in the first 3 seconds and include an emotional turn every 15 seconds. It must naturally mention the three selling points: "8-hour wear", "no dullness", and "no caking". It must not include absolute claims such as "the strongest", "number one", or "medical-grade beauty". Output the script by timeline segment and mark host action cues.
+The second version is not better because it is longer. It is better because it writes out the **task pressure**:
 
-The latter is not better because it is longer. It is better because it writes out the **task pressure**:
+- Clear deliverable: a 60-second live-commerce script
+- Structural constraint: segmented by timeline, with action cues
+- Content constraint: three selling points must appear
+- Experience goal: hook users in the first 3 seconds, add a turn every 15 seconds
+- Safety constraint: avoid absolute claims
+- Checkable items: selling points, duration, format, and prohibited terms can all be evaluated
 
-- It has a clear deliverable: a 60-second livestream spoken script
-- It has structural constraints: segment by timeline and mark action cues
-- It has content constraints: three selling points must appear
-- It has experience goals: hook the audience in the first 3 seconds and create a turn every 15 seconds
-- It has safety constraints: no absolute claims
-- It has checkable items: selling points, duration, format, and prohibited words can all be evaluated
-
-**Good queries often come from friction in real scenarios:**
+**Good queries often come from real-world friction:**
 
 - Users complain that "this cannot be used directly"
-- Business stakeholders say "this is not our tone"
-- Reviewers point out "there is a compliance risk here"
-- Operations teams report that "the conversion point appears too late"
+- Business teams say "this is not our tone"
+- Reviewers point out "this has compliance risk"
+- Operators report "the conversion point appears too late"
 
-These are not noise; they are raw materials for queries. **Before adding a query to the evaluation set, you should be able to answer: which capability is this expected to trip the model on?** If you cannot answer that, do not rush it into the set.
+These are not noise. They are raw materials for queries. **Before a query enters the set, it should be able to answer one question: which capability is it expected to make the model stumble on?** If you cannot answer that, do not rush to add it.
 
----
+## Difficulty Scale: Six Dimensions, Twelve Points
 
-## 5. Difficulty scale: 6 dimensions, 12 points
-
-A healthy evaluation set needs a difficulty gradient. Below is a 6-dimensional difficulty scale for non-code queries. Each dimension is scored 0-2, for a total of 0-12:
+A healthy evaluation set needs a difficulty gradient. The following is a six-dimensional difficulty scale for non-code queries. Each dimension is scored from 0 to 2, for a total score of 0 to 12:
 
 | Dimension | 0 points | 1 point | 2 points |
 | --- | --- | --- | --- |
-| **Context dependency** | No external materials needed | Requires 1-2 materials | Requires cross-verification across multiple materials |
-| **Constraint density** | Only one goal | 2-3 hard constraints | Multiple hard constraints with priorities |
-| **Goal conflict** | Goals are aligned | Minor trade-offs | Multiple goals cannot all be satisfied at once |
-| **Judgment openness** | Has a clear standard answer | Requires explaining the judgment | Requires decisions under uncertainty |
-| **Execution chain** | Single-step generation | Multi-step planning | Read, classify, calculate, rank, and output a closed loop |
-| **Multi-turn disturbance** | Completed in one turn | User adds constraints | User changes the goal / tool fails / context must be reused |
+| Context dependency | No external materials required | Requires 1-2 materials | Requires cross-verification across multiple materials |
+| Constraint density | Only one goal | 2-3 hard constraints | Multiple hard constraints with priority relationships |
+| Goal conflict | Goals are aligned | Minor trade-offs | Multiple goals cannot all be satisfied |
+| Judgment openness | Clear standard answer | Requires explaining the judgment | Requires decision-making under uncertainty |
+| Execution chain | Single-step generation | Multi-step planning | Read, classify, calculate, rank, and output a closed loop |
+| Multi-turn perturbation | Completed in one turn | User adds constraints | User changes goal / tool fails / context must be reused |
 
-**Difficulty ranges and uses:**
+**Difficulty bands and use cases:**
 
 | Score | Difficulty | Use |
 | --- | --- | --- |
-| 0-3 | Easy | Smoke tests; check basic instruction following |
+| 0-3 | Easy | Smoke tests for basic instruction following |
 | 4-7 | Medium | Main body of the evaluation set; tests combined capabilities |
-| 8-10 | Hard | Separates model performance; tests planning and judgment |
-| 11-12 | Adversarial | Keep a small number for boundary testing; should not take too large a share |
+| 8-10 | Hard | Separates models; tests planning and judgment |
+| 11-12 | Adversarial | Keep only a small portion for boundary testing; should not dominate the set |
 
 **Example comparison:**
 
-- "Help me write a template for e-commerce after-sales communication." -> Context dependency 0, constraint density 0, goal conflict 0, judgment openness 0, execution chain 1, multi-turn disturbance 0 -> **Total score: 1 (easy)**
-- "I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. I want a partial refund while keeping the item, and I also want to complain that the product page misrepresented the material. Please give me negotiation talking points, likely merchant objections, the platform intervention process, and an evidence checklist." -> Context dependency 1, constraint density 2, goal conflict 2, judgment openness 1, execution chain 1, multi-turn disturbance 0 -> **Total score: 7 (upper-medium)**
-- Same as above, but add order JSON, product-page snapshot, platform policy, and similar precedents; require risk levels and priority ranking; in the second turn, the user adds: "The merchant says the warranty does not cover human-caused damage. How should I respond?" -> **Total score: 10-11 (hard/adversarial)**
+- "Help me write an e-commerce after-sales talking-points template." -> Context dependency 0, constraint density 0, goal conflict 0, judgment openness 0, execution chain 1, multi-turn perturbation 0 -> **total score 1 (easy)**
+- "I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. I want a partial refund while keeping the product, and I also want to complain that the product page misrepresented the material. Please give me negotiation talking points, likely merchant objections and rebuttals, the platform escalation process, and an evidence checklist." -> Context dependency 1, constraint density 2, goal conflict 2, judgment openness 1, execution chain 1, multi-turn perturbation 0 -> **total score 7 (upper-medium)**
+- Same as above, but also includes order JSON, product-page snapshot, platform policy, and similar precedent cases; requires outputting risk levels and priority ranking; and in a second turn, the user adds, "The merchant says the warranty does not cover human-caused damage. How should I rebut?" -> **total score 10-11 (hard/adversarial)**
 
-An evaluation set is not a pile of exam questions. It is a design for **capability resolution**. Truly good queries should separate models instead of producing a flat scoreboard. If all models get full marks, the task is too easy. If all models collapse, the task may be too hard or the grader may be misconfigured.
+An evaluation set is not a pile of exam questions. It is a design of **capability resolution**. A genuinely good query should separate models, not create a flat tie. If every model gets full marks, the task is too easy. If every model collapses, the task may be too hard or the grader may be misconfigured.
 
----
+## Pre-use Checklist
 
-## 6. Pre-inclusion checklist: self-check before adding to the set
+When writing a query, I run through the following checks. Sharing them here as a practical reference:
 
-### Basic validity (5 items; all must pass before inclusion is considered)
+**Basic validity** (all five must pass before the query is considered for ingestion)
 
-| Check item | Passing standard |
-| --- | --- |
-| Realism | The sentence sounds like something a real user would say, not an exam question or textbook example |
-| Task orientation | It completes a concrete task rather than broadly summarizing general knowledge |
-| Clear deliverable | The output has a clear form: report, table, talking points, plan, checklist, ranking |
-| Scorable | At least 2 hard constraints can be checked automatically or semi-automatically |
-| Attributable | After model failure, you can tell whether the cause is missing information, omitted constraints, wrong judgment, or expression problems |
+- Realism: the query sounds like something a real user would say, not an exam question.
+- Task orientation: it completes a concrete task, rather than summarizing generic knowledge.
+- Clear deliverable: the output form is explicit, such as a report, table, talking points, plan, checklist, or ranking.
+- Scoreability: at least two hard constraints can be checked automatically or semi-automatically.
+- Attributability: when the model fails, you can tell whether the failure is missing information, omitted constraints, wrong judgment, or expression quality.
 
-### Structural completeness (5 items)
+### Structural completeness
 
-| Field | What to check |
-| --- | --- |
-| prompt | Whether the user task is natural and does not read like exam instructions |
-| environment | Whether the materials needed to complete the task are provided, and whether the materials are truly bound to the task |
-| hidden assumptions | Whether missing information and assumption-only information are marked |
-| hard_checks / soft_checks | Whether must-pass hard constraints are separated from gradable soft quality |
-| grader | Whether there is clear Pass/Fail logic, a scoring rubric, or human review rules |
+- prompt: whether the user task is natural and does not sound like exam instructions
+- environment: whether the materials needed to complete the task are provided, and whether the materials are truly tied to the task
+- hidden assumptions: whether missing information and assumptions are clearly marked
+- hard_checks / soft_checks: whether hard constraints and soft quality are separated
+- grader: whether there is clear Pass/Fail logic, a scoring rubric, or a human review rule
 
-### Discriminative-power checks (5 items; revise if any is triggered)
+**Discriminative-power checks** (if any of these are triggered, revise the query)
 
-| Signal | Action |
-| --- | --- |
-| Strong models all get full marks | Increase constraint-conflict density or add multi-turn disturbance |
-| Most models cannot complete it at all | Check whether the task wording is unclear, the environmental materials are insufficient, or the grader is too strict |
-| Human experts cannot judge because of insufficient information | Add materials or reduce adversarial intensity |
-| It obviously looks like a standard LLM-synthesized question | Rewrite it and add real business friction |
-| Evaluation can only conclude "well written / average" | Rewrite hard_checks and add checkable hard constraints |
+- Strong models all get full marks -> increase constraint conflict or add multi-turn perturbation.
+- Most models cannot complete it at all -> inspect wording, materials, and grader.
+- Human experts cannot judge because information is insufficient -> add materials or reduce adversarial intensity.
+- It clearly looks like a standard LLM-synthesized task -> rewrite it with real business friction.
+- The evaluation can only conclude "pretty good / average" -> rewrite hard_checks and add checkable hard constraints.
 
----
+If the list above feels too long, here is the compressed version:
 
-## 7. A complete query example
+- **Realism:** It reproduces a real scenario, rather than a textbook-style exam question.
+- **Scoreability:** At least two hard constraints, such as format, compliance, or data consistency, can be checked automatically or semi-automatically.
+- **Attributability:** When the model fails, you can clearly identify whether the cause is missing information, omitted constraints, or faulty reasoning.
 
-Below is a non-code eval query suitable for inclusion in an Agent scenario. Every field has a reason to exist: `environment` prevents the model from answering only with general knowledge; `hard_checks` makes evaluation attributable; `failure_modes` gives direction for the next iteration.
+## A Complete Query Example
+
+The following is a non-code eval query suitable for ingestion in an Agent scenario. Every field has a reason to exist: `environment` prevents the model from answering with generic knowledge only; `hard_checks` makes evaluation attributable; `failure_modes` gives the next iteration a direction.
 
 ```yaml
 id: ecommerce_refund_down_jacket_001
 scenario: ecommerce_after_sales
 difficulty_score: 9
 difficulty_tags:
-  - incomplete_information   # Some information must be extracted from materials and cannot be assumed
-  - policy_trap              # There is a policy trap caused by user misunderstanding: partial refund is not the default path
-  - multi_goal_conflict      # Refund, keeping the item, and complaint goals are in conflict
+  - incomplete_information   # Some information must be extracted from materials, not assumed
+  - policy_trap              # There is a rule trap caused by user misunderstanding; partial refund is not the default path
+  - multi_goal_conflict      # Refund, keeping the product, and complaint goals are in conflict
   - risk_ranking             # Requires prioritized risk judgment
 
 prompt: >
   I bought a down jacket last week. After wearing it once, I found that it leaks down.
-  It has already passed the 7-day no-reason return period, but it is still under warranty.
-  I want to apply for a partial refund while keeping the item, and also complain that the merchant's product-detail page misrepresented the material.
-  Please help me prepare talking points for negotiating with customer service, anticipate possible excuses from the merchant and provide rebuttals.
-  If negotiation fails, also outline the platform intervention process and the evidence checklist I should prepare in advance.
+  It has already exceeded the 7-day no-reason return window,
+  but it is still under warranty. I want to apply for a partial refund while keeping the product,
+  and I also want to complain that the merchant misrepresented the material on the detail page.
+  Please help me prepare negotiation talking points for customer service,
+  anticipate likely excuses from the merchant and provide rebuttals.
+  If negotiation fails, also outline the platform escalation process
+  and the evidence checklist I should prepare in advance.
   Please label all suggestions as high / medium / low risk.
 
 environment:
   - order_detail.json          # Order time, product information, payment amount
-  - product_page_snapshot.html # Product-detail material description, including suspected misrepresentation
-  - platform_refund_policy.md  # Platform return/refund policy, including partial-refund conditions
+  - product_page_snapshot.html # Product-detail material description, including possible misrepresentation
+  - platform_refund_policy.md  # Platform return/refund rules, including conditions for partial refund
   - dispute_precedent.md       # Historical precedents for similar disputes
-  - evidence_checklist.xlsx    # Template for evidence that can be submitted
+  - evidence_checklist.xlsx    # Evidence checklist template that can be submitted
 
 hard_checks:
-  - Whether it proactively points out that "partial refund while keeping the item" may not be a path supported by default on the platform
+  - Whether it proactively points out that "partial refund while keeping the product" may not be a default platform-supported path
   - Whether it asks the user to supplement or verify key evidence, such as order time, material description on the product page, and photos/videos of down leakage
-  - Whether it distinguishes negotiation, complaint, and platform intervention as three stages and gives action items for each
+  - Whether it separates negotiation, complaint, and platform escalation into three stages with actions for each
   - Whether it outputs likely merchant excuses and corresponding rebuttal strategies
   - Whether it labels all suggestions as high / medium / low risk
-  - Whether it avoids promising that "partial refund will definitely succeed"
+  - Whether it avoids promising that the user will definitely obtain a partial refund
 
 soft_checks:
-  - Whether the talking points sound collaborative rather than escalating confrontation
-  - Whether the plan is truly executable and directly usable by the user
-  - Whether the risk warnings are tied to the sufficiency of evidence
-  - Whether it reasonably explains trade-offs between the user's goal and platform rules
+  - Whether the talking points are collaborative rather than escalatory
+  - Whether the plan is truly executable and can be used directly by the user
+  - Whether risk warnings are tied to the sufficiency of evidence
+  - Whether it explains reasonable trade-offs between the user's demands and platform rules
 
 failure_modes:
-  - Directly applying a generic return template and ignoring the specifics of this case
-  - Ignoring the key constraint that the 7-day period has passed and assuming the user is still within the no-reason return window
-  - Promising that the user can definitely obtain a partial refund
-  - Failing to ask the user to prepare key evidence, such as videos/photos of down leakage
-  - Only outputting talking points without providing an escalation path and evidence checklist
-  - Missing risk labels or using labels that do not differentiate risk levels
+  - Directly applying a generic return-service template and ignoring the case-specific details
+  - Ignoring the key constraint that more than 7 days have passed, and assuming the user is still within the no-reason return window
+  - Promising that the user will definitely secure a partial refund
+  - Not asking the user to prepare key evidence, such as photos/videos of down leakage
+  - Only outputting talking points without an escalation path or evidence checklist
+  - Missing risk labels or using labels that do not distinguish between risks
 ```
 
----
+## Evaluation Sets Are Not One-off Question Banks; They Need a Data Flywheel
 
-## 8. Evaluation sets are not one-off question banks; they need a data flywheel
-
-Non-code tasks change quickly, and models will also "learn" old task types through iteration. A healthy evaluation set needs continuous evolution.
+Non-code tasks change quickly, and models also "learn" old task types over iterations. A healthy evaluation set needs continuous evolution.
 
 An executable data flywheel has six steps:
 
-1. **Online capture:** Record sessions where users downvote, repeatedly ask follow-up questions, require human intervention, encounter tool failures, or heavily rewrite the output
-2. **Failure attribution:** Classify bad cases into categories such as omitted constraints, factual errors, invalid format, wrong risk judgment, failure to ask clarifying questions, overpromising, and expression that does not fit the scenario
-3. **Rewrite into eval queries:** After anonymization, preserve real task pressure and rewrite into a standard structure: prompt + environment + expected behavior + grader
-4. **Add to the regression set:** Every time the model, prompt, or toolchain changes, run this batch of queries to ensure old problems do not recur
-5. **Retire regularly:** When all mainstream models pass a type of query stably across multiple rounds, downgrade it from the core evaluation set to the smoke-test set
-6. **Add new difficulties:** When new failure modes appear online, immediately add corresponding queries, such as "missing key selling points after multi-turn compression", "refusing to provide compliant rights-protection advice", or "fabricating results directly after tool timeout"
+1. **Online capture:** Record sessions where users downvote, ask repeated follow-up questions, require human intervention, encounter tool failures, or heavily rewrite the output.
+2. **Failure attribution:** Label bad cases into categories such as constraint omission, factual error, format noncompliance, wrong risk judgment, failure to ask follow-up questions, over-promising, or expression mismatch with the scenario.
+3. **Rewrite into eval queries:** After desensitization, preserve the real task pressure and rewrite into the standard structure: prompt + environment + expected behavior + grader.
+4. **Add to the regression set:** Whenever the model, prompt, or toolchain changes, run these queries to ensure old problems do not recur.
+5. **Regular retirement:** When all mainstream models consistently pass a certain query type across multiple rounds, downgrade it from the core evaluation set to the smoke test set.
+6. **Add new difficulties:** When new failure modes appear online, immediately add corresponding queries, such as "missing key selling points after multi-turn compression", "refusing to provide compliant rights-protection advice", or "fabricating results after a tool timeout".
 
 **Maintenance signal table:**
 
 | Signal | Action |
 | --- | --- |
-| Full-score rate for a query type exceeds 80% | Add constraint conflicts or multi-turn disturbance |
-| All queries of a type fail | Check task wording, sufficiency of environmental materials, and grader strictness |
+| A query type has a full-score rate above 80% | Increase constraint conflict or multi-turn perturbation |
+| A query type fails for all models | Check task wording, sufficiency of environmental materials, and grader strictness |
 | Online bad cases appear frequently | Add them to the core regression set |
-| A task has no discriminative power for a long time | Downgrade it to a smoke test |
-| Human reviewers and LLM judges continue to diverge significantly | Rewrite the rubric and add anchor examples |
+| A task has no discriminative value for a long time | Downgrade it to smoke testing |
+| Human reviewers and LLM judges continue to disagree significantly | Rewrite the rubric and add anchor examples |
 
-The key is not "accumulating more and more". It is keeping the evaluation set's **resolution**: as model capabilities improve, the difficulty boundary of the evaluation set must move upward as well.
+The key is not to accumulate more and more queries. The key is to keep the evaluation set's **resolution**. As model capabilities improve, the difficulty boundary of the evaluation set must move upward as well.
 
----
+## Closing Thoughts
 
-## Final thoughts
+![Query construction console from sources, layering, and structure to ingestion and evolution](../../assets/posts/opinions/non-code-eval-query-construction-en/query-synthesis-flow-en.webp)
 
-To decide whether a query is worth adding to the evaluation set, look at five things:
+To decide whether a query deserves to be added to the evaluation set, look at five things:
 
 1. **Does it come from a real user scenario,** rather than an exam question designed only for testing?
-2. **Does it have a clear main test point,** so that failures can be attributed to a specific capability dimension?
+2. **Does it have a clear primary test point,** so that failures can be attributed to a concrete capability dimension?
 3. **Does it contain verifiable hard constraints,** such as text requirements, quantity limits, format rules, or prohibited items?
-4. **Does it distinguish between models,** instead of letting all models pass easily or making all models fail?
-5. **Does it expose a business-meaningful failure,** rather than creating a rare and contrived trick question?
+4. **Does it distinguish between models,** rather than letting all models pass easily or fail completely?
+5. **Does it expose a business-meaningful failure,** rather than manufacturing a rare and contrived trap?
 
-A good query is not necessarily long or complex. **Its value lies in this: when a model fails, we know why it failed; when a model improves, we also know which capability improved.**
+A good query does not have to be long or complicated. **Its value lies in this: when the model fails, we know why it failed; when the model improves, we know which capability improved.**
 
-Every good query should be like a probe, piercing the places where models most easily pretend they have "already learned it".
-
----
+Every good query should act like a probe, pressing into the place where a model most easily pretends it has already mastered the task.
 
 **References:**
 
