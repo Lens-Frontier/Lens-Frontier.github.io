@@ -23,6 +23,8 @@ Here, a query is not an ordinary prompt. An ordinary prompt only needs to make t
 
 A good eval query is not about "asking in a more complicated way". It is about "measuring more clearly".
 
+![Flow from real tasks to verifiable eval queries](../../assets/posts/opinions/non-code-eval-query-construction-en/query-synthesis-flow-en.webp)
+
 ---
 
 ## 1. First decide: is this task worth turning into an eval?

@@ -24,6 +24,8 @@ tags: ["evaluation", "query", "llm-as-a-judge", "benchmark"]
 
 好的 eval query 不是"问得更复杂"，而是"测得更清楚"。
 
+![从真实任务到可验证 Query 的构建流程](../../assets/posts/opinions/non-code-eval-query-construction/query-synthesis-flow.webp)
+
 ---
 
 ## 一、先判断：这个任务真的值得做成 eval 吗？
