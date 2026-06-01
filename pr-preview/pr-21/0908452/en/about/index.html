@@ -1,0 +1,204 @@
+<!DOCTYPE html><html lang="en"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="generator" content="Astro v6.3.3"><title>About - Lens Frontier</title><meta name="description" content="About Lens Frontier."><link rel="canonical" href="https://lens-frontier.github.io/blog/pr-preview/pr-21/0908452/en/about/"><link rel="alternate" hreflang="zh-CN" href="/blog/pr-preview/pr-21/0908452/zh/about/"><link rel="alternate" hreflang="en" href="/blog/pr-preview/pr-21/0908452/en/about/"><link rel="icon" type="image/svg+xml" href="/blog/pr-preview/pr-21/0908452/favicon.svg"><link rel="stylesheet" href="/blog/pr-preview/pr-21/0908452/_astro/BaseLayout.Bpmd06CA.css"></head> <body> <div class="shell"> <header class="site-header"> <a class="brand" href="/blog/pr-preview/pr-21/0908452/en/"> <span class="brand-mark">LF</span> <span> <strong>Lens Frontier</strong> <small>papers benchmarks opinions</small> </span> </a> <div class="header-actions"> <nav class="nav" aria-label="Primary navigation"> <a href="/blog/pr-preview/pr-21/0908452/en/papers/">Papers</a><a href="/blog/pr-preview/pr-21/0908452/en/benchmarks/">Benchmarks</a><a href="/blog/pr-preview/pr-21/0908452/en/opinions/">Opinions</a><a href="/blog/pr-preview/pr-21/0908452/en/tags/">Tags</a> </nav> <nav class="lang-switch" aria-label="Language switcher"> <a href="/blog/pr-preview/pr-21/0908452/zh/about/"> 中文 </a><a href="/blog/pr-preview/pr-21/0908452/en/about/" aria-current="true"> EN </a> </nav> </div> </header> <main>  <article class="article"> <header class="article-header"> <p class="eyebrow">about</p> <h1>About</h1> <p class="dek">A place for paper notes and modest arguments around benchmarks and evaluation.</p> </header> <div class="article-body"> <p>The goal is not to create a single official line. It is to put reading notes, arguments, and judgments into a traceable context: what evidence a claim depends on, where its boundary sits, and which assumptions separate it from real systems or evaluation protocols.</p><p>Each article should keep sources, assumptions, limits, and personal judgment visible. Claims can be modest, but the reasoning should be traceable; different authors can keep different angles, especially around benchmark design, result interpretation, and the gap to real tasks.</p> </div> </article>  </main> <footer class="site-footer"> <div> <span>Lens Frontier</span> <span>Reading notes and modest benchmark arguments.</span> </div> <nav class="footer-links" aria-label="Secondary navigation"> <a href="/blog/pr-preview/pr-21/0908452/en/timeline/">Timeline</a> <a href="/blog/pr-preview/pr-21/0908452/en/about/">About</a> <a href="/blog/pr-preview/pr-21/0908452/en/rss.xml">RSS</a> <a href="https://github.com/Lens-Frontier/blog" target="_blank" rel="noreferrer">GitHub</a> </nav> </footer> </div> <script>(function(){const lang = "en";
+
+	(() => {
+		const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+		const scrollMilestones = [25, 50, 75, 90, 100];
+
+		const article = document.querySelector('[data-analytics-page="article"]');
+		const articleParams =
+			article ?
+				{
+					content_type: article.dataset.analyticsCollection,
+					item_id: article.dataset.analyticsArticleId,
+					language: article.dataset.analyticsLang || lang,
+				}
+			:	{ language: lang };
+
+		const sendEvent = (name, params = {}) => {
+			if (doNotTrack || typeof window.gtag !== 'function') return;
+			window.gtag('event', name, {
+				...articleParams,
+				...params,
+			});
+		};
+
+		const pageKind = () => {
+			if (article) return 'article';
+			const segments = window.location.pathname.split('/').filter(Boolean);
+			const contentSegments = segments[0] === 'blog' ? segments.slice(1) : segments;
+			if (contentSegments[0] === 'zh' || contentSegments[0] === 'en') contentSegments.shift();
+			return contentSegments[0] || 'home';
+		};
+
+		const linkPath = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? url.pathname : undefined;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const linkDomain = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? undefined : url.hostname;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const classifyLink = (link) => {
+			if (link.closest('.brand')) return { event: 'lf_navigation_click', type: 'brand' };
+			if (link.closest('.nav')) return { event: 'lf_navigation_click', type: 'primary_nav' };
+			if (link.closest('.lang-switch')) return { event: 'lf_language_switch', type: 'language_switch' };
+			if (link.closest('.footer-links')) return { event: 'lf_navigation_click', type: 'footer_nav' };
+			if (link.closest('.channel-list')) return { event: 'lf_content_discovery', type: 'home_channel' };
+			if (link.closest('.entry-row') && link.matches('.entry-title')) return { event: 'lf_content_discovery', type: 'entry_title' };
+			if (link.closest('.tag-cloud')) return { event: 'lf_tag_click', type: 'tag_cloud' };
+			if (link.closest('.tag-list')) return { event: 'lf_tag_click', type: 'tag_list' };
+			if (link.closest('.article-actions')) return { event: 'lf_article_resource_click', type: 'article_resource' };
+			if (link.closest('.authors')) return { event: 'lf_author_profile_click', type: 'author_profile' };
+			if (link.closest('.article-body')) return { event: 'lf_article_body_link_click', type: 'article_body_link' };
+			return linkDomain(link.href) ? { event: 'lf_outbound_click', type: 'outbound' } : { event: 'lf_internal_click', type: 'internal' };
+		};
+
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const zoomValue = document.querySelector('[data-lightbox-zoom-value]');
+		let imageLightboxOpen = false;
+
+		const recordImageOpen = (imageTrigger) => {
+			const images = [...document.querySelectorAll('.article-body img[data-lightbox-trigger]')];
+			imageLightboxOpen = true;
+			sendEvent('lf_article_image_open', {
+				image_index: images.indexOf(imageTrigger) + 1,
+				image_count: images.length,
+			});
+		};
+
+		const recordImageZoom = (direction) => {
+			window.setTimeout(() => {
+				sendEvent('lf_article_image_zoom', {
+					zoom_direction: direction,
+					zoom_value: zoomValue?.textContent,
+				});
+			}, 0);
+		};
+
+		if (lightbox && typeof MutationObserver !== 'undefined') {
+			new MutationObserver(() => {
+				if (!imageLightboxOpen || !lightbox.hidden) return;
+				imageLightboxOpen = false;
+				sendEvent('lf_article_image_close');
+			}).observe(lightbox, { attributes: true, attributeFilter: ['hidden'] });
+		}
+
+		document.addEventListener('click', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.closest('.article-body img[data-lightbox-trigger]');
+			if (imageTrigger) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			const zoomIn = target.closest('[data-lightbox-zoom-in]');
+			const zoomOut = target.closest('[data-lightbox-zoom-out]');
+			if (zoomIn || zoomOut) {
+				recordImageZoom(zoomIn ? 'in' : 'out');
+				return;
+			}
+
+			const link = target.closest('a[href]');
+			if (!link) return;
+
+			const classification = classifyLink(link);
+			sendEvent(classification.event, {
+				link_type: classification.type,
+				link_path: linkPath(link.href),
+				link_domain: linkDomain(link.href),
+				page_kind: pageKind(),
+			});
+		});
+
+		document.addEventListener('keydown', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.matches('.article-body img[data-lightbox-trigger]') ? target : null;
+			if (imageTrigger && (event.key === 'Enter' || event.key === ' ')) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			if (!imageLightboxOpen) return;
+			if (event.key === '+' || event.key === '=') recordImageZoom('in');
+			if (event.key === '-' || event.key === '_') recordImageZoom('out');
+			if (event.key === '0') recordImageZoom('reset');
+		});
+
+		document.addEventListener(
+			'wheel',
+			(event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				if (!imageLightboxOpen || !target?.closest('[data-lightbox-stage]') || !(event.ctrlKey || event.metaKey)) return;
+				recordImageZoom(event.deltaY < 0 ? 'in' : 'out');
+			},
+			{ passive: true },
+		);
+
+		if (!article) return;
+
+		let maxDepth = 0;
+		let activeSeconds = 0;
+		const sentScrollMilestones = new Set();
+		let sentEngagedRead = false;
+		let scrollTickScheduled = false;
+
+		const scrollDepth = () => {
+			const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollable <= 0) return 100;
+			return Math.min(100, Math.max(0, Math.round((window.scrollY / scrollable) * 100)));
+		};
+
+		const maybeSendReadingEvents = () => {
+			maxDepth = Math.max(maxDepth, scrollDepth());
+			for (const milestone of scrollMilestones) {
+				if (maxDepth < milestone || sentScrollMilestones.has(milestone)) continue;
+				sentScrollMilestones.add(milestone);
+				sendEvent('lf_article_scroll_depth', {
+					scroll_depth: milestone,
+					active_seconds: activeSeconds,
+				});
+			}
+
+			if (!sentEngagedRead && activeSeconds >= 45 && maxDepth >= 50) {
+				sentEngagedRead = true;
+				sendEvent('lf_article_engaged_read', {
+					scroll_depth: maxDepth,
+					active_seconds: activeSeconds,
+				});
+			}
+		};
+
+		const tick = () => {
+			if (document.visibilityState === 'visible') activeSeconds += 1;
+			maybeSendReadingEvents();
+		};
+
+		const scheduleScrollRead = () => {
+			if (scrollTickScheduled) return;
+			scrollTickScheduled = true;
+			window.requestAnimationFrame(() => {
+				scrollTickScheduled = false;
+				maybeSendReadingEvents();
+			});
+		};
+
+		window.addEventListener('scroll', scheduleScrollRead, { passive: true });
+		document.addEventListener('visibilitychange', maybeSendReadingEvents);
+		window.setInterval(tick, 1000);
+		maybeSendReadingEvents();
+	})();
+})();</script> </body></html>
