@@ -1,0 +1,811 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="generator" content="Astro v6.3.3"><title>如何构建面向复杂文本任务评估集的可验证 Query - Lens Frontier</title><meta name="description" content="围绕复杂文本文本任务的 Query 构建，拆解真实工作流、上下文环境、评分约束、难度分层与自我进化机制，让评估集从普通 prompt 变成可复用评估资产。"><link rel="canonical" href="https://lens-frontier.github.io/blog/pr-preview/pr-21/26ca675/zh/opinions/non-code-eval-query-construction/"><link rel="alternate" hreflang="zh-CN" href="/blog/pr-preview/pr-21/26ca675/zh/opinions/non-code-eval-query-construction/"><link rel="alternate" hreflang="en" href="/blog/pr-preview/pr-21/26ca675/en/opinions/non-code-eval-query-construction-en/"><link rel="icon" type="image/svg+xml" href="/blog/pr-preview/pr-21/26ca675/favicon.svg"><link rel="stylesheet" href="/blog/pr-preview/pr-21/26ca675/_astro/BaseLayout.Bpmd06CA.css"></head> <body> <div class="shell"> <header class="site-header"> <a class="brand" href="/blog/pr-preview/pr-21/26ca675/zh/"> <span class="brand-mark">LF</span> <span> <strong>Lens Frontier</strong> <small>papers benchmarks opinions</small> </span> </a> <div class="header-actions"> <nav class="nav" aria-label="Primary navigation"> <a href="/blog/pr-preview/pr-21/26ca675/zh/papers/">Papers</a><a href="/blog/pr-preview/pr-21/26ca675/zh/benchmarks/">Benchmarks</a><a href="/blog/pr-preview/pr-21/26ca675/zh/opinions/">Opinions</a><a href="/blog/pr-preview/pr-21/26ca675/zh/tags/">Tags</a> </nav> <nav class="lang-switch" aria-label="Language switcher"> <a href="/blog/pr-preview/pr-21/26ca675/zh/opinions/non-code-eval-query-construction/" aria-current="true"> 中文 </a><a href="/blog/pr-preview/pr-21/26ca675/en/opinions/non-code-eval-query-construction-en/"> EN </a> </nav> </div> </header> <main>  <article class="article" data-analytics-page="article" data-analytics-article-id="opinions/non-code-eval-query-construction" data-analytics-collection="opinions" data-analytics-lang="zh"> <header class="article-header"> <p class="eyebrow">opinion</p> <h1>如何构建面向复杂文本任务评估集的可验证 Query</h1> <p class="dek">围绕复杂文本文本任务的 Query 构建，拆解真实工作流、上下文环境、评分约束、难度分层与自我进化机制，让评估集从普通 prompt 变成可复用评估资产。</p> <div class="article-byline"> <ul class="authors" aria-label="Authors"><li><img src="https://github.com/ivyandbonjuice.png?size=96" alt="黄昕慧 avatar" loading="lazy"><span><a class="author-name" href="https://github.com/ivyandbonjuice" target="_blank" rel="noreferrer"><strong>黄昕慧</strong></a><a href="https://github.com/ivyandbonjuice" target="_blank" rel="noreferrer">@ivyandbonjuice</a></span></li></ul>  </div> <dl class="spec-table"><div><dt>日期</dt><dd>2026/05/29</dd></div><div><dt>立场</dt><dd>高质量复杂文本评估集不能只堆 prompt，而需要将真实用户任务改写为带环境、交付物、检查项和失败模式的结构化 Query</dd></div></dl> <div class="article-actions">   </div> <div class="tag-list"> <a href="/blog/pr-preview/pr-21/26ca675/zh/tags/evaluation/">evaluation</a><a href="/blog/pr-preview/pr-21/26ca675/zh/tags/query/">query</a><a href="/blog/pr-preview/pr-21/26ca675/zh/tags/llm-as-a-judge/">llm-as-a-judge</a><a href="/blog/pr-preview/pr-21/26ca675/zh/tags/benchmark/">benchmark</a> </div> </header> <div class="article-body">  <p>复杂文本任务最容易给人一种错觉：既然输出都是文字，那评估也只能靠”写得好不好”来判断。</p>
+<p>但真正做评估集时会发现，难点不在于文字没有标准答案，而在于 <strong>query 本身经常没有把任务边界写清楚</strong>。太泛的 query 会把 Agent 能力退化成 Chatbot 能力；堆满约束但没有评分结构的 query，又会让失败原因无从归因。</p>
+<p>这种错觉导致了大量平庸的评估集——它们看起来像是一堆“考试题”，模型只要语气流畅、结构清晰就能拿高分。但真正落地时会发现，模型在真实任务中依旧无法交付。评估复杂文本任务的难点，不在于文字没有标准答案，而在于<strong>大多数 Query 没有把真实任务的上下文依赖、硬约束和失败模式结构化</strong>，导致模型的能力边界变得不可观测。</p>
+<p>真正的 Eval Query 不是普通 Prompt，它不只是为了让模型生成回答，而是为了暴露模型的能力边界。</p>
+<h2 id="任务价值的分层与鉴别">任务价值的分层与鉴别</h2>
+<p>在动笔构建 Query 前，首要任务是判断该场景在评估框架中的价值。根据真实场景的复杂度和环境耦合度，可将其划分为三个层级：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>层级</th><th>定义</th><th>评估价值</th><th>Query 示例</th><th>本质能力（部分）</th></tr></thead><tbody><tr><td>L1 通用知识型</td><td>简单的知识归纳或文本生成，如“撰写退货话术”。</td><td>适合基础冒烟测试，不适合作为核心评估集</td><td>整理一份电商退换货话术模板</td><td>知识归纳、文本生成</td></tr><tr><td>L2 场景定制型</td><td>包含个性化约束（如时间窗口、特定商品、用户诉求）。</td><td>复杂文本评估的主体，能触及约束处理与风险判断。</td><td>我上周买的羽绒服跑绒，超过 7 天但还在质保期，帮我设计协商方案</td><td>场景理解、约束处理、风险判断</td></tr><tr><td>L3 闭环执行型</td><td><strong>基于环境材料的决策任务</strong>。模型需读取数据、整合证据、多步规划并产出可执行交付物。</td><td>评估集的价值核心</td><td>结合订单、商品页快照、平台规则和同类纠纷案例，判断能否部分退款，输出话术、证据清单和升级路径</td><td>数据读取、证据整合、多步规划、可执行交付</td></tr></tbody></table>
+<p><strong>L1 的核心问题：</strong> 模型只要语气流畅、结构清楚，就容易得高分。但它测的只是”会不会总结”，无法区分真正具备规划和判断能力的模型。</p>
+<p><strong>L2 开始进入价值区：</strong> 要求模型处理个性化约束——时间窗口、商品状态、用户诉求、商家可能的反驳、平台介入路径——每一项都是潜在失分点。</p>
+<p><strong>L3 才是评估集的高价值样本：</strong> 它不只要求模型”写建议”，还要求模型基于环境材料完成关键判断：订单时间是否真的超过 7 天？商品页是否存在虚标？平台规则是否支持部分退款？证据是否足以升级投诉？</p>
+<p>一个简单的判断标准：<strong>去掉所有环境材料后，模型是否还能完成关键判断？</strong></p>
+<p>如果去掉材料后答得差不多——这条 query 是 L1/L2；如果去掉材料后无法完成关键判断——它才是真正的 L3。</p>
+<p>同一个主题，三个层级的对比：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>主题</strong></th><th><strong>L1（通用知识）</strong></th><th><strong>L2（场景定制）</strong></th><th><strong>L3（闭环执行）</strong></th></tr></thead><tbody><tr><td>模型评估复盘</td><td>总结模型评估常见误判类型</td><td>复盘近一个月误判案例，归类原因并统计占比</td><td>读取误判明细、规则文档和权重配置，判断误判归因，输出修复优先级和实验排期</td></tr><tr><td>电商售后</td><td>写退货沟通话术</td><td>针对羽绒服跑绒但超过 7 天的情况设计维权方案</td><td>结合订单、商品页、平台规则和判例，输出风险分级、话术、证据清单和升级路径</td></tr><tr><td>机票改签</td><td>科普特价票退改签规则</td><td>针对北京到三亚往返票变更行程，设计损失最小方案</td><td>结合原订单、航司规则、余票价格和时间窗口，计算成本并排序改签/退票/重买方案</td></tr></tbody></table>
+<h2 id="从写-prompt转向构建任务包">从“写 Prompt”转向“构建任务包”</h2>
+<p>把握了层级之后，就要弄清楚一条 eval query 到底由什么构成。</p>
+<p>通过梳理目前主流的 Agent 评估框架（如 OpenAI GDPval、Anthropic Agent Evals 等），能看到一个清晰的演进趋势： <strong>从”单条 prompt”走向”任务包”</strong>。</p>
+<ul>
+<li><strong>从“题目”到“工作流”</strong>：评估不再是单一的 Prompt，而是包含参考文件、上下文、环境状态的真实知识工作任务。</li>
+<li><strong>从“交付物”到“过程轨迹”</strong>：Agent 的评估必须纳入 Transcript、Tool Calls 和环境反馈。模型声称“完成了”是不够的，我们需要评估它是否调用了正确工具，以及在工具报错时能否具备从失败中恢复的能力。</li>
+<li><strong>数据飞轮效应</strong>：高质量的 Query 并非凭空编造，而是来源于生产 trace 中的 Badcase。将线上真实失败的 Query 加入数据集，用于后续的回归测试，是目前评估集构建的最佳实践。</li>
+</ul>
+<p>复杂文本 eval query 的标准结构可定义为：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>query = 用户任务 (user task)</span></span>
+<span class="line"><span>      + 上下文材料 (context package)</span></span>
+<span class="line"><span>      + 期望交付物 (expected deliverable)</span></span>
+<span class="line"><span>      + 可观察检查项 (observable checks)</span></span>
+<span class="line"><span>      + 失败模式 (failure modes)</span></span></code></pre>
+<p><strong>用户任务：</strong> 自然的用户意图描述，不像考试说明，有真实压力感。</p>
+<p><strong>上下文材料：</strong> 完成任务所需的外部材料——订单 JSON、商品页快照、平台规则、历史判例。如果去掉这些材料模型还能答得差不多，说明这条 query 可能不够有价值。</p>
+<p><strong>期望交付物：</strong> 输出物要明确。“给我建议”不算交付物；“按风险等级分段输出话术、商家反驳预判和证据清单”才算。</p>
+<p><strong>可观察检查项：</strong> 分为两类——<strong>硬约束</strong>（有没有提醒超过 7 天、有没有要求补充证据）和<strong>软质量</strong>（话术是否有协商感而非对抗感）。硬约束可以自动检查，软质量需要人工或 LLM judge 评估。</p>
+<p><strong>失败模式：</strong> 提前标注”这条 query 预计会让模型在哪里失败”。比如直接套用通用退货模板、承诺用户一定能退款成功、只写话术不给升级路径。这些标注既是 grader 的判分依据，也是评估迭代的方向。</p>
+<p>Agent 类评估还需要额外观察<strong>过程轨迹</strong>：模型是否真的调用了正确工具、是否修改了环境状态、是否在工具失败后恢复。最终说”我完成了”，和真的完成了，是两件事。</p>
+<h2 id="query的来源与价值">query的来源与价值</h2>
+<p>高质量 query 的来源可以分成五类：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>来源</strong></th><th><strong>优点</strong></th><th><strong>风险</strong></th><th><strong>适合阶段</strong></th></tr></thead><tbody><tr><td>真实用户日志</td><td>最贴近业务，天然有代表性</td><td>需要脱敏，噪声多</td><td>核心评估集、回归集</td></tr><tr><td>线上 badcase</td><td>直接对应模型短板，区分度高</td><td>容易集中在少数失败类型</td><td>自我进化、版本回归</td></tr><tr><td>专家手写</td><td>逻辑严密，可控性强</td><td>成本高，容易不够真实</td><td>冷启动 MVE</td></tr><tr><td>LLM 合成</td><td>规模快，覆盖面广</td><td>同质化、模板味，可能泄漏答案结构</td><td>候选扩充，不宜直接入库</td></tr><tr><td>公开 benchmark / 行业案例</td><td>便于参考 schema 和覆盖面</td><td>与业务场景可能偏离</td><td>建立初始 taxonomy</td></tr></tbody></table>
+<p><strong>冷启动阶段的推荐比例</strong>（目前比较认可的经验值）<strong>：</strong></p>
+<ul>
+<li>0–30 条：专家手写 50% + 真实日志/业务反馈 30% + LLM 合成候选 20%</li>
+<li>30–100 条：真实日志 40% + badcase 30% + 专家手写 20% + LLM 合成 10%</li>
+<li>100 条以后：以 badcase 和生产 trace 为主，专家负责清洗、标注和补洞</li>
+</ul>
+<p>LLM 合成我一般只用来<strong>生成候选</strong>，不会直接入库。直接入库的话，评估集会很快出现同质化——模型学会一种模板，所有题都照着答，你就再也测不出真实能力了。</p>
+<h2 id="把真实任务压力写进去而不是写得更长">把真实任务压力写进去，而不是写得更长</h2>
+<p>复杂文本评估集最怕”教科书味”——query 写得四平八稳，模型随便生成一段通顺的文字就能得高分。</p>
+<p>教科书味版本：</p>
+<blockquote>
+<p>帮我写一段直播带货脚本。</p>
+</blockquote>
+<p>这条 query 太干净了。真实业务里的直播脚本有商品卖点、禁用词、时长限制、转化目标、平台规则和用户人群。把这些压力写进去：</p>
+<blockquote>
+<p>我要给一款面向油皮通勤人群的粉底液写 60 秒直播口播脚本。必须在前 3 秒制造痛点冲突，每 15 秒有一次情绪转折；必须自然提到”持妆 8 小时""不暗沉""不卡粉”三个卖点；不能出现”最强""第一""医美级”等绝对化表述。输出按时间轴分段，并标出主播动作提示。</p>
+</blockquote>
+<p>后者不是因为更长才更好，而是因为它把<strong>任务压力</strong>写出来了：</p>
+<ul>
+<li>有明确交付物：60 秒直播口播脚本</li>
+<li>有结构约束：按时间轴分段，标出动作提示</li>
+<li>有内容约束：三个卖点必须出现</li>
+<li>有体验目标：前 3 秒抓人，每 15 秒转折</li>
+<li>有安全约束：不能出现绝对化表述</li>
+<li>有可检查项：卖点、时长、格式、禁用词都能评估</li>
+</ul>
+<p><strong>好的 query 往往来自真实场景里的摩擦：</strong></p>
+<ul>
+<li>用户抱怨”没法直接用”</li>
+<li>业务方说”这不是我们的口吻”</li>
+<li>审核指出”这里有合规风险”</li>
+<li>运营反馈”转化点出现得太晚”</li>
+</ul>
+<p>这些不是噪声，而是 query 的原材料。<strong>一条 query 入库前，要能回答：它预期会卡住模型的哪个能力？</strong> 如果回答不上来，就不要急着入库。</p>
+<h2 id="难度量表6-个维度12-分制">难度量表：6 个维度，12 分制</h2>
+<p>一个健康的评估集需要难度梯度。以下是一个适用于复杂文本 query 的 6 维难度量表，每项 0–2 分，总分 0–12：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>维度</strong></th><th><strong>0 分</strong></th><th><strong>1 分</strong></th><th><strong>2 分</strong></th></tr></thead><tbody><tr><td>上下文依赖</td><td>无需外部材料</td><td>需要 1–2 份材料</td><td>需要多份材料交叉验证</td></tr><tr><td>约束密度</td><td>只有一个目标</td><td>有 2–3 个硬约束</td><td>多个硬约束且存在优先级</td></tr><tr><td>目标冲突</td><td>目标一致</td><td>有轻微取舍</td><td>多目标不可同时满足</td></tr><tr><td>判断开放度</td><td>有明确标准答案</td><td>需要解释判断</td><td>需要在不确定信息下决策</td></tr><tr><td>执行链路</td><td>单步生成</td><td>多步规划</td><td>读取、归类、计算、排序、输出闭环</td></tr><tr><td>多轮扰动</td><td>单轮完成</td><td>用户追加约束</td><td>用户改变目标 / 工具失败 / 要求复用上下文</td></tr></tbody></table>
+<p><strong>难度区间与用途：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>分数</strong></th><th><strong>难度</strong></th><th><strong>用途</strong></th></tr></thead><tbody><tr><td>0–3</td><td>简单</td><td>冒烟测试，检查基础指令遵循</td></tr><tr><td>4–7</td><td>中等</td><td>主评估集主体，测组合能力</td></tr><tr><td>8–10</td><td>困难</td><td>拉开模型差距，测规划与判断</td></tr><tr><td>11–12</td><td>对抗</td><td>少量保留，用于边界测试，不宜占比过高</td></tr></tbody></table>
+<p><strong>实例对比：</strong></p>
+<blockquote>
+<p>“帮我写一份电商售后话术模板。”
+→ 上下文依赖 0，约束密度 0，目标冲突 0，判断开放度 0，执行链路 1，多轮扰动 0 → <strong>总分 1 分（简单）</strong>
+“我上周买的羽绒服跑绒，超过 7 天但还在质保期；我想部分退款并保留商品，同时投诉商品页虚标面料。请给我协商话术、商家反驳预判、平台介入流程和证据清单。”
+→ 上下文依赖 1，约束密度 2，目标冲突 2，判断开放度 1，执行链路 1，多轮扰动 0 → <strong>总分 7 分（中等偏上）</strong>
+同上，再加入订单 JSON、商品页快照、平台规则、同类判例，要求输出风险等级和优先级排序，且用户在第二轮补充”商家说质保期不包含人为损坏，怎么反驳”
+→ <strong>总分 10–11 分（困难/对抗）</strong>
+评估集不是考试卷堆题，而是<strong>能力分辨率的设计</strong>。真正好的 query 应该能把模型拉开，而不是制造一片平分。如果所有模型都满分，说明题太简单；如果所有模型都崩，说明题可能过难或 grader 设置有问题。</p>
+</blockquote>
+<h2 id="用前-checklist">用前 Checklist</h2>
+<p>写 query 的时候，会过一遍下面的检查。分享出来供参考：</p>
+<h3 id="基础有效性5-条全部通过才考虑入库">基础有效性（5 条，全部通过才考虑入库）</h3>
+<ul>
+<li>真实感：这句话像真实用户会说的，不是考试题</li>
+<li>任务性：它在完成具体任务，而不是泛泛归纳通用知识</li>
+<li>交付物清晰：输出形式明确（报告、表格、话术、计划、清单、排序）</li>
+<li>可判分：至少有 2 个硬约束可以自动或半自动检查</li>
+<li>可归因：模型失败后，能判断是信息缺失、约束遗漏、判断错误还是表达问题</li>
+</ul>
+<h3 id="结构完整性5-条">结构完整性（5 条）</h3>
+<ul>
+<li>prompt：用户任务是否自然，不像考试说明</li>
+<li>environment：是否提供了完成任务所需的材料；材料与任务是否真正绑定</li>
+<li>hidden assumptions：是否标注了哪些信息缺失、哪些只能假设</li>
+<li>hard_checks / soft_checks：是否区分了硬约束和软质量</li>
+<li>grader：是否有明确的 Pass/Fail 逻辑、评分 rubric 或人工复核规则</li>
+</ul>
+<h3 id="区分度检查5-条任一触发则需修改">区分度检查（5 条，任一触发则需修改）</h3>
+<ul>
+<li>强模型全部满分 → 增加约束冲突或多轮扰动</li>
+<li>大多数模型完全无法完成 → 检查表述、材料、grader</li>
+<li>人类专家也因信息不足无法判断 → 补充材料或降低对抗程度</li>
+<li>明显像 LLM 合成出来的标准题 → 改写，加入真实业务摩擦感</li>
+<li>评价只能得出“写得不错/一般” → 重写 hard_checks，补充可检查的硬约束</li>
+</ul>
+<p>如果上面太多，浓缩版如下：</p>
+<ul>
+<li><strong>真实感</strong>：它是真实场景的复现，而不是教科书式的考试题。</li>
+<li><strong>可判分性</strong>：至少有 2 个硬约束（格式、合规、数据一致性）可以自动或半自动检查。</li>
+<li><strong>可归因性</strong>：当模型失败时，你能明确指出是信息缺失、约束遗漏，还是判断逻辑错误。</li>
+</ul>
+<h2 id="一条完整-query-的样例">一条完整 query 的样例</h2>
+<p>以下是一条可入库的复杂文本 eval query，适用于 Agent 场景。每个字段都有它存在的理由：<code>environment</code> 是为了让模型无法仅凭通用知识作答；<code>hard_checks</code> 是为了让评估可归因；<code>failure_modes</code> 是为了让下一轮迭代有方向。</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="yaml"><code><span class="line"><span style="color:#22863A">id</span><span style="color:#24292E">: </span><span style="color:#032F62">ecommerce_refund_down_jacket_001</span></span>
+<span class="line"><span style="color:#22863A">scenario</span><span style="color:#24292E">: </span><span style="color:#032F62">ecommerce_after_sales</span></span>
+<span class="line"><span style="color:#22863A">difficulty_score</span><span style="color:#24292E">: </span><span style="color:#005CC5">9</span></span>
+<span class="line"><span style="color:#22863A">difficulty_tags</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">incomplete_information</span><span style="color:#6A737D">   # 部分信息需要从材料中提取，不能假设</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">policy_trap</span><span style="color:#6A737D">              # 存在用户误解的规则陷阱（部分退款非默认路径）</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">multi_goal_conflict</span><span style="color:#6A737D">      # 退款、保留商品、投诉三个目标存在冲突</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">risk_ranking</span><span style="color:#6A737D">             # 需要输出有优先级的风险判断</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">prompt</span><span style="color:#24292E">: </span><span style="color:#D73A49">></span></span>
+<span class="line"><span style="color:#032F62">  我上周买的羽绒服，穿过一次发现跑绒，已经超过 7 天无理由，</span></span>
+<span class="line"><span style="color:#032F62">  但还在质保期。我想申请部分退款并保留商品，同时投诉商家详情页虚标面料。</span></span>
+<span class="line"><span style="color:#032F62">  请帮我整理跟客服协商的话术，预判商家可能的推脱理由并给出反驳；</span></span>
+<span class="line"><span style="color:#032F62">  如果协商失败，再梳理平台介入流程和提前准备的凭证清单。</span></span>
+<span class="line"><span style="color:#032F62">  所有建议请按高 / 中 / 低风险标注。</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">environment</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">order_detail.json</span><span style="color:#6A737D">          # 订单时间、商品信息、支付金额</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">product_page_snapshot.html</span><span style="color:#6A737D"> # 商品详情页面料描述（含虚标嫌疑）</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">platform_refund_policy.md</span><span style="color:#6A737D">  # 平台退换货规则（含部分退款条件）</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">dispute_precedent.md</span><span style="color:#6A737D">       # 同类纠纷历史判例</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">evidence_checklist.xlsx</span><span style="color:#6A737D">    # 可提交证据清单模板</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">hard_checks</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否主动指出"部分退款并保留商品"不一定是平台默认支持的路径</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否要求用户补充或核验关键证据（订单时间、商品页材质描述、跑绒照片/视频）</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否区分协商、投诉、平台介入三个阶段并分别给出行动项</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否输出商家可能的推脱理由及对应反驳策略</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否按高/中/低风险标注所有建议</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否避免承诺"一定能部分退款成功"</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">soft_checks</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">话术是否有协商感，而不是激化对抗</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">方案是否真正可执行，用户拿到后能直接使用</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">风险提示是否与证据充分程度挂钩</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">是否在用户诉求和平台规则之间做了合理取舍说明</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#22863A">failure_modes</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">直接套用通用退货话术模板，忽略本案特殊性</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">忽略"超过 7 天"这一关键约束，默认用户仍在无理由退货期内</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">承诺用户一定能争取到部分退款</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">没有要求用户准备关键证据（跑绒视频/照片）</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">只输出话术，不提供升级路径和证据清单</span></span>
+<span class="line"><span style="color:#24292E">  - </span><span style="color:#032F62">风险标注缺失或标注不区分</span></span></code></pre>
+<h2 id="评估集不是一次性题库要有数据飞轮">评估集不是一次性题库，要有数据飞轮</h2>
+<p>复杂文本任务变化很快，模型也会随着迭代”学会”旧题型。一个健康的评估集需要持续进化。</p>
+<p>可执行的数据飞轮分六步：</p>
+<ol>
+<li><strong>线上捕获：</strong> 记录用户点踩、重复追问、人工介入、工具失败、输出被大幅改写的 session</li>
+<li><strong>失败归因：</strong> 把 badcase 标成几类——约束遗漏、事实错误、格式不合规、风险判断错误、没有主动追问、过度承诺、表达不符合场景</li>
+<li><strong>改写成 eval query：</strong> 脱敏后保留真实任务压力，改写为标准结构（prompt + environment + expected behavior + grader）</li>
+<li><strong>加入回归集：</strong> 每次换模型、改 prompt、改工具链，都跑这批 query，确保旧问题不复发</li>
+<li><strong>定期退役：</strong> 某类 query 所有主流模型连续多轮稳定通过后，从核心评估集降级到冒烟测试集</li>
+<li><strong>补充新难点：</strong> 线上出现新失败模式时，立刻新增对应 query——比如”多轮压缩后遗漏关键卖点""模型拒绝给合规维权建议""工具超时后直接编造结果”</li>
+</ol>
+<p><strong>维护信号表：</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>信号</th><th>动作</th></tr></thead><tbody><tr><td>某类 query 满分率超过 80%</td><td>增加约束冲突或多轮扰动</td></tr><tr><td>某类 query 全部失败</td><td>检查题目表述、环境材料充分性和 grader 严格程度</td></tr><tr><td>线上 badcase 高频出现</td><td>加入核心回归集</td></tr><tr><td>题目长期无区分度</td><td>降级到冒烟测试</td></tr><tr><td>人工与 LLM judge 分歧持续偏大</td><td>重写 rubric 并增加锚定样例</td></tr></tbody></table>
+<p>这里的关键不是”越积越多”，而是让评估集<strong>保持分辨率</strong>——随着模型能力提升，评估集的难度边界也要同步上移。</p>
+<h2 id="最后">最后</h2>
+<p><img alt="Query 构建操作台：从数据来源、任务分层、结构化到入库和进化" loading="lazy" decoding="async"  width="1600" height="1006" src="/blog/pr-preview/pr-21/26ca675/_astro/query-synthesis-flow.BQHbXD15_skFMW.webp" >
+判断一条 query 是否值得入库，看五件事：</p>
+<ol>
+<li><strong>它是否来自真实用户场景，</strong> 而不是为了测试而设计的考试题</li>
+<li><strong>它是否有明确主考点，</strong> 失败后能归因到具体能力维度</li>
+<li><strong>它是否包含可验证的硬约束，</strong> 比如文字要求、数量限制、格式规范、禁止项</li>
+<li><strong>它是否有模型间区分度，</strong> 不会所有模型都轻松通过或全部失败</li>
+<li><strong>它是否能暴露一种有业务意义的失败，</strong> 而不是制造罕见刁钻题</li>
+</ol>
+<p>好的 query 不一定长，也不一定复杂。<strong>它的价值在于：一旦模型失败，我们能知道为什么失败；一旦模型进步，我们也能知道它在哪个能力上进步了。</strong></p>
+<p>每一条好的 query，都应该像一根探针，刺向模型最容易伪装成”已经会了”的地方。</p>
+<p><strong>参考资料：</strong></p>
+<ul>
+<li><a href="https://openai.com/index/gdpval/">OpenAI GDPval</a></li>
+<li><a href="https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents">Anthropic: Demystifying evals for AI agents</a></li>
+<li><a href="https://www.kimi.com/blog/kimi-k2-6">Kimi K2.6 Tech Blog</a></li>
+<li><a href="https://docs.langchain.com/oss/python/langchain/test/evals">LangChain Agent Evals</a></li>
+<li><a href="https://www.langchain.com/langsmith/evaluation">LangSmith Evaluations</a></li>
+</ul>  </div> <div class="image-lightbox" data-image-lightbox data-open-label="查看大图" role="dialog" aria-modal="true" aria-label="图片预览" hidden> <button class="image-lightbox__close" type="button" data-lightbox-close aria-label="关闭" title="关闭"> <span aria-hidden="true">×</span> </button> <div class="image-lightbox__stage" data-lightbox-stage> <div class="image-lightbox__frame" data-lightbox-frame> <img data-lightbox-image alt=""> </div> </div> <div class="image-lightbox__controls" data-lightbox-controls> <button type="button" data-lightbox-zoom-out aria-label="缩小" title="缩小"> <span aria-hidden="true">−</span> </button> <span data-lightbox-zoom-value>100%</span> <button type="button" data-lightbox-zoom-in aria-label="放大" title="放大"> <span aria-hidden="true">+</span> </button> </div> <p class="image-lightbox__caption" data-lightbox-caption hidden></p> </div> <script>
+	(() => {
+		const article = document.querySelector('.article-body');
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const preview = lightbox?.querySelector('[data-lightbox-image]');
+		const caption = lightbox?.querySelector('[data-lightbox-caption]');
+		const closeButton = lightbox?.querySelector('[data-lightbox-close]');
+		const stage = lightbox?.querySelector('[data-lightbox-stage]');
+		const frame = lightbox?.querySelector('[data-lightbox-frame]');
+		const zoomInButton = lightbox?.querySelector('[data-lightbox-zoom-in]');
+		const zoomOutButton = lightbox?.querySelector('[data-lightbox-zoom-out]');
+		const zoomValue = lightbox?.querySelector('[data-lightbox-zoom-value]');
+		if (
+			!article ||
+			!lightbox ||
+			!preview ||
+			!caption ||
+			!closeButton ||
+			!stage ||
+			!frame ||
+			!zoomInButton ||
+			!zoomOutButton ||
+			!zoomValue
+		)
+			return;
+
+		let activeTrigger = null;
+		let basePreviewWidth = 0;
+		let basePreviewHeight = 0;
+		let previewScale = 1;
+		let gestureStartScale = 1;
+		const openLabel = lightbox.dataset.openLabel || 'View larger image';
+		const minScale = 1;
+		const maxScale = 2;
+		const scaleStep = 0.25;
+
+		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+		const rememberBaseSize = () => {
+			const rect = preview.getBoundingClientRect();
+			if (!preview.naturalWidth || rect.width < 24 || rect.height < 24) return;
+			basePreviewWidth = rect.width / previewScale;
+			basePreviewHeight = rect.height / previewScale;
+		};
+
+		const updateZoomControls = () => {
+			zoomValue.textContent = `${Math.round(previewScale * 100)}%`;
+			zoomOutButton.disabled = !basePreviewWidth || previewScale <= minScale;
+			zoomInButton.disabled = !basePreviewWidth || previewScale >= maxScale;
+
+			if (previewScale <= minScale || !basePreviewWidth) {
+				frame.style.removeProperty('--lightbox-frame-width');
+				frame.style.removeProperty('--lightbox-frame-height');
+				preview.style.removeProperty('--lightbox-image-scale');
+				delete lightbox.dataset.zoomed;
+				return;
+			}
+
+			frame.style.setProperty('--lightbox-frame-width', `${Math.round(basePreviewWidth * previewScale)}px`);
+			frame.style.setProperty('--lightbox-frame-height', `${Math.round(basePreviewHeight * previewScale)}px`);
+			preview.style.setProperty('--lightbox-image-scale', String(previewScale));
+			lightbox.dataset.zoomed = 'true';
+		};
+
+		const setPreviewScale = (nextScale) => {
+			if (lightbox.hidden) return;
+			if (!basePreviewWidth) rememberBaseSize();
+			if (!basePreviewWidth) return;
+
+			const scale = clamp(Math.round(nextScale * 100) / 100, minScale, maxScale);
+			if (Math.abs(scale - previewScale) < 0.01) return;
+			const scrollXRatio =
+				stage.scrollWidth > stage.clientWidth ? (stage.scrollLeft + stage.clientWidth / 2) / stage.scrollWidth : 0.5;
+			const scrollYRatio =
+				stage.scrollHeight > stage.clientHeight ? (stage.scrollTop + stage.clientHeight / 2) / stage.scrollHeight : 0.5;
+
+			previewScale = scale;
+			updateZoomControls();
+			window.requestAnimationFrame(() => {
+				if (previewScale <= minScale) {
+					stage.scrollLeft = 0;
+					stage.scrollTop = 0;
+					return;
+				}
+				stage.scrollLeft = scrollXRatio * stage.scrollWidth - stage.clientWidth / 2;
+				stage.scrollTop = scrollYRatio * stage.scrollHeight - stage.clientHeight / 2;
+			});
+		};
+
+		const resetPreviewZoom = () => {
+			basePreviewWidth = 0;
+			basePreviewHeight = 0;
+			previewScale = 1;
+			stage.scrollLeft = 0;
+			stage.scrollTop = 0;
+			updateZoomControls();
+		};
+
+		const closeLightbox = () => {
+			if (lightbox.hidden) return;
+			lightbox.hidden = true;
+			preview.removeAttribute('src');
+			delete lightbox.dataset.imageShape;
+			resetPreviewZoom();
+			document.documentElement.classList.remove('has-image-lightbox');
+			activeTrigger?.focus({ preventScroll: true });
+			activeTrigger = null;
+		};
+
+		const openLightbox = (image) => {
+			activeTrigger = image;
+			resetPreviewZoom();
+			preview.src = image.currentSrc || image.src;
+			preview.alt = image.alt || '';
+			const naturalWidth = image.naturalWidth || 0;
+			const naturalHeight = image.naturalHeight || 0;
+			lightbox.dataset.imageShape = naturalHeight > naturalWidth * 1.25 ? 'tall' : 'fit';
+			const captionText = image.alt?.trim() || image.title?.trim() || '';
+			caption.textContent = captionText;
+			caption.hidden = !captionText;
+			lightbox.hidden = false;
+			document.documentElement.classList.add('has-image-lightbox');
+			const primePreviewSize = () => {
+				window.requestAnimationFrame(() => {
+					rememberBaseSize();
+					updateZoomControls();
+				});
+			};
+			if (preview.complete && preview.naturalWidth) primePreviewSize();
+			else preview.addEventListener('load', primePreviewSize, { once: true });
+			closeButton.focus({ preventScroll: true });
+		};
+
+		for (const image of article.querySelectorAll('img')) {
+			if (image.closest('a')) continue;
+
+			const labelText = image.alt?.trim() || image.title?.trim();
+			image.dataset.lightboxTrigger = '';
+			image.setAttribute('role', 'button');
+			image.setAttribute('aria-label', labelText ? `${openLabel}: ${labelText}` : openLabel);
+			if (!image.hasAttribute('tabindex')) image.tabIndex = 0;
+
+			image.addEventListener('click', () => openLightbox(image));
+			image.addEventListener('keydown', (event) => {
+				if (event.key !== 'Enter' && event.key !== ' ') return;
+				event.preventDefault();
+				openLightbox(image);
+			});
+		}
+
+		closeButton.addEventListener('click', closeLightbox);
+		zoomInButton.addEventListener('click', () => setPreviewScale(previewScale + scaleStep));
+		zoomOutButton.addEventListener('click', () => setPreviewScale(previewScale - scaleStep));
+		stage.addEventListener(
+			'wheel',
+			(event) => {
+				if (lightbox.hidden || !(event.ctrlKey || event.metaKey)) return;
+				event.preventDefault();
+				setPreviewScale(previewScale * Math.exp(-event.deltaY * 0.006));
+			},
+			{ passive: false },
+		);
+		stage.addEventListener('gesturestart', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			gestureStartScale = previewScale;
+		});
+		stage.addEventListener('gesturechange', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			setPreviewScale(gestureStartScale * event.scale);
+		});
+		lightbox.addEventListener('click', (event) => {
+			if (event.target === lightbox || event.target === stage) closeLightbox();
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') closeLightbox();
+			if (!lightbox.hidden && (event.key === '+' || event.key === '=')) {
+				event.preventDefault();
+				setPreviewScale(previewScale + scaleStep);
+			}
+			if (!lightbox.hidden && (event.key === '-' || event.key === '_')) {
+				event.preventDefault();
+				setPreviewScale(previewScale - scaleStep);
+			}
+			if (!lightbox.hidden && event.key === '0') {
+				event.preventDefault();
+				setPreviewScale(1);
+			}
+			if (event.key === 'Tab' && !lightbox.hidden) {
+				event.preventDefault();
+				const focusable = [closeButton, zoomOutButton, zoomInButton].filter((item) => !item.disabled);
+				const currentIndex = focusable.indexOf(document.activeElement);
+				const nextIndex =
+					event.shiftKey ?
+						(currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+					:	(currentIndex + 1) % focusable.length;
+				focusable[nextIndex]?.focus({ preventScroll: true });
+			}
+		});
+	})();
+</script>  </article>  </main> <footer class="site-footer"> <div> <span>Lens Frontier</span> <span>Reading notes and modest benchmark arguments.</span> </div> <nav class="footer-links" aria-label="Secondary navigation"> <a href="/blog/pr-preview/pr-21/26ca675/zh/timeline/">Timeline</a> <a href="/blog/pr-preview/pr-21/26ca675/zh/about/">About</a> <a href="/blog/pr-preview/pr-21/26ca675/zh/rss.xml">RSS</a> <a href="https://github.com/Lens-Frontier/blog" target="_blank" rel="noreferrer">GitHub</a> </nav> </footer> </div> <script>(function(){const lang = "zh";
+
+	(() => {
+		const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+		const scrollMilestones = [25, 50, 75, 90, 100];
+
+		const article = document.querySelector('[data-analytics-page="article"]');
+		const articleParams =
+			article ?
+				{
+					content_type: article.dataset.analyticsCollection,
+					item_id: article.dataset.analyticsArticleId,
+					language: article.dataset.analyticsLang || lang,
+				}
+			:	{ language: lang };
+
+		const sendEvent = (name, params = {}) => {
+			if (doNotTrack || typeof window.gtag !== 'function') return;
+			window.gtag('event', name, {
+				...articleParams,
+				...params,
+			});
+		};
+
+		const pageKind = () => {
+			if (article) return 'article';
+			const segments = window.location.pathname.split('/').filter(Boolean);
+			const contentSegments = segments[0] === 'blog' ? segments.slice(1) : segments;
+			if (contentSegments[0] === 'zh' || contentSegments[0] === 'en') contentSegments.shift();
+			return contentSegments[0] || 'home';
+		};
+
+		const linkPath = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? url.pathname : undefined;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const linkDomain = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? undefined : url.hostname;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const classifyLink = (link) => {
+			if (link.closest('.brand')) return { event: 'lf_navigation_click', type: 'brand' };
+			if (link.closest('.nav')) return { event: 'lf_navigation_click', type: 'primary_nav' };
+			if (link.closest('.lang-switch')) return { event: 'lf_language_switch', type: 'language_switch' };
+			if (link.closest('.footer-links')) return { event: 'lf_navigation_click', type: 'footer_nav' };
+			if (link.closest('.channel-list')) return { event: 'lf_content_discovery', type: 'home_channel' };
+			if (link.closest('.entry-row') && link.matches('.entry-title')) return { event: 'lf_content_discovery', type: 'entry_title' };
+			if (link.closest('.tag-cloud')) return { event: 'lf_tag_click', type: 'tag_cloud' };
+			if (link.closest('.tag-list')) return { event: 'lf_tag_click', type: 'tag_list' };
+			if (link.closest('.article-actions')) return { event: 'lf_article_resource_click', type: 'article_resource' };
+			if (link.closest('.authors')) return { event: 'lf_author_profile_click', type: 'author_profile' };
+			if (link.closest('.article-body')) return { event: 'lf_article_body_link_click', type: 'article_body_link' };
+			return linkDomain(link.href) ? { event: 'lf_outbound_click', type: 'outbound' } : { event: 'lf_internal_click', type: 'internal' };
+		};
+
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const zoomValue = document.querySelector('[data-lightbox-zoom-value]');
+		let imageLightboxOpen = false;
+
+		const recordImageOpen = (imageTrigger) => {
+			const images = [...document.querySelectorAll('.article-body img[data-lightbox-trigger]')];
+			imageLightboxOpen = true;
+			sendEvent('lf_article_image_open', {
+				image_index: images.indexOf(imageTrigger) + 1,
+				image_count: images.length,
+			});
+		};
+
+		const recordImageZoom = (direction) => {
+			window.setTimeout(() => {
+				sendEvent('lf_article_image_zoom', {
+					zoom_direction: direction,
+					zoom_value: zoomValue?.textContent,
+				});
+			}, 0);
+		};
+
+		if (lightbox && typeof MutationObserver !== 'undefined') {
+			new MutationObserver(() => {
+				if (!imageLightboxOpen || !lightbox.hidden) return;
+				imageLightboxOpen = false;
+				sendEvent('lf_article_image_close');
+			}).observe(lightbox, { attributes: true, attributeFilter: ['hidden'] });
+		}
+
+		document.addEventListener('click', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.closest('.article-body img[data-lightbox-trigger]');
+			if (imageTrigger) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			const zoomIn = target.closest('[data-lightbox-zoom-in]');
+			const zoomOut = target.closest('[data-lightbox-zoom-out]');
+			if (zoomIn || zoomOut) {
+				recordImageZoom(zoomIn ? 'in' : 'out');
+				return;
+			}
+
+			const link = target.closest('a[href]');
+			if (!link) return;
+
+			const classification = classifyLink(link);
+			sendEvent(classification.event, {
+				link_type: classification.type,
+				link_path: linkPath(link.href),
+				link_domain: linkDomain(link.href),
+				page_kind: pageKind(),
+			});
+		});
+
+		document.addEventListener('keydown', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.matches('.article-body img[data-lightbox-trigger]') ? target : null;
+			if (imageTrigger && (event.key === 'Enter' || event.key === ' ')) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			if (!imageLightboxOpen) return;
+			if (event.key === '+' || event.key === '=') recordImageZoom('in');
+			if (event.key === '-' || event.key === '_') recordImageZoom('out');
+			if (event.key === '0') recordImageZoom('reset');
+		});
+
+		document.addEventListener(
+			'wheel',
+			(event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				if (!imageLightboxOpen || !target?.closest('[data-lightbox-stage]') || !(event.ctrlKey || event.metaKey)) return;
+				recordImageZoom(event.deltaY < 0 ? 'in' : 'out');
+			},
+			{ passive: true },
+		);
+
+		if (!article) return;
+
+		let maxDepth = 0;
+		let activeSeconds = 0;
+		const sentScrollMilestones = new Set();
+		let sentEngagedRead = false;
+		let scrollTickScheduled = false;
+
+		const scrollDepth = () => {
+			const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollable <= 0) return 100;
+			return Math.min(100, Math.max(0, Math.round((window.scrollY / scrollable) * 100)));
+		};
+
+		const maybeSendReadingEvents = () => {
+			maxDepth = Math.max(maxDepth, scrollDepth());
+			for (const milestone of scrollMilestones) {
+				if (maxDepth < milestone || sentScrollMilestones.has(milestone)) continue;
+				sentScrollMilestones.add(milestone);
+				sendEvent('lf_article_scroll_depth', {
+					scroll_depth: milestone,
+					active_seconds: activeSeconds,
+				});
+			}
+
+			if (!sentEngagedRead && activeSeconds >= 45 && maxDepth >= 50) {
+				sentEngagedRead = true;
+				sendEvent('lf_article_engaged_read', {
+					scroll_depth: maxDepth,
+					active_seconds: activeSeconds,
+				});
+			}
+		};
+
+		const tick = () => {
+			if (document.visibilityState === 'visible') activeSeconds += 1;
+			maybeSendReadingEvents();
+		};
+
+		const scheduleScrollRead = () => {
+			if (scrollTickScheduled) return;
+			scrollTickScheduled = true;
+			window.requestAnimationFrame(() => {
+				scrollTickScheduled = false;
+				maybeSendReadingEvents();
+			});
+		};
+
+		window.addEventListener('scroll', scheduleScrollRead, { passive: true });
+		document.addEventListener('visibilitychange', maybeSendReadingEvents);
+		window.setInterval(tick, 1000);
+		maybeSendReadingEvents();
+	})();
+})();</script> </body></html>
