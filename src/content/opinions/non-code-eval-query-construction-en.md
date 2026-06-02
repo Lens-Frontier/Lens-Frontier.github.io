@@ -3,19 +3,19 @@ title: "How to Build Verifiable Queries for Evaluating Complex Text Tasks"
 lang: "en"
 translationKey: "synthetic-query-construction"
 date: 2026-05-29
-summary: "A practical guide to building eval queries for non-code text tasks, covering real workflows, context packages, scoring constraints, difficulty layering, and self-evolving evaluation sets."
+summary: "A practical guide to building eval queries for complex text tasks, covering real workflows, context packages, scoring constraints, difficulty layering, and self-evolving evaluation sets."
 authors:
   - name: "Xinhui Huang"
     github: "ivyandbonjuice"
-stance: "High-quality non-code evaluation sets cannot be built by piling up prompts; they require rewriting real user tasks into structured queries with environment, deliverables, checks, and failure modes."
+stance: "High-quality complex text evaluation sets cannot be built by piling up prompts; they require rewriting real user tasks into structured queries with environment, deliverables, checks, and failure modes."
 tags: ["evaluation", "query", "llm-as-a-judge", "benchmark"]
 ---
 
-Non-code tasks often create an illusion: since the output is text, evaluation can only judge whether the writing is "good" or not.
+Complex text tasks often create an illusion: since the output is text, evaluation can only judge whether the writing is "good" or not.
 
 But once you start building an evaluation set, you quickly find that the hard part is not that text lacks a standard answer. The hard part is that the **query itself often fails to define the task boundary clearly**. Overly broad queries reduce Agent capability to Chatbot capability. Queries packed with constraints but lacking a scoring structure make it impossible to attribute failures.
 
-This illusion leads to many mediocre evaluation sets. They look like collections of "exam questions", where a model can score well as long as the answer is fluent and well-structured. But in real deployments, the same model may still fail to deliver. The difficulty of evaluating non-code tasks is not that text has no standard answer. It is that **most queries fail to structure the real task's context dependencies, hard constraints, and failure modes**, making the model's capability boundary unobservable.
+This illusion leads to many mediocre evaluation sets. They look like collections of "exam questions", where a model can score well as long as the answer is fluent and well-structured. But in real deployments, the same model may still fail to deliver. The difficulty of evaluating complex text tasks is not that text has no standard answer. It is that **most queries fail to structure the real task's context dependencies, hard constraints, and failure modes**, making the model's capability boundary unobservable.
 
 A real eval query is not an ordinary prompt. It is not merely designed to make the model generate an answer. It is designed to expose the boundary of the model's capability.
 
@@ -26,7 +26,7 @@ Before writing a query, the first task is to determine how valuable the scenario
 | Level | Definition | Evaluation value | Query example | Core capabilities |
 | --- | --- | --- | --- | --- |
 | L1 General knowledge | Simple knowledge summarization or text generation, such as "write return-service talking points." | Suitable for basic smoke tests, not as the core evaluation set | Prepare an e-commerce return and exchange communication template | Knowledge summarization, text generation |
-| L2 Scenario-customized | Contains personalized constraints, such as time window, specific product, or user goal. | The main body of non-code evaluation; can test constraint handling and risk judgment | I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. Help me design a negotiation plan | Scenario understanding, constraint handling, risk judgment |
+| L2 Scenario-customized | Contains personalized constraints, such as time window, specific product, or user goal. | The main body of complex text evaluation; can test constraint handling and risk judgment | I bought a down jacket last week and it is leaking down. It has been more than 7 days, but it is still under warranty. Help me design a negotiation plan | Scenario understanding, constraint handling, risk judgment |
 | L3 Closed-loop execution | **A decision task based on environmental materials**. The model must read data, integrate evidence, plan multiple steps, and produce executable deliverables. | The value core of the evaluation set | Based on the order, product-page snapshot, platform policy, and similar dispute cases, determine whether a partial refund is possible, and output talking points, evidence checklist, and escalation path | Data reading, evidence integration, multi-step planning, executable delivery |
 
 **The core problem with L1:** As long as the model is fluent and well-structured, it can easily get a high score. But this only tests whether the model can summarize. It cannot distinguish models that truly have planning and judgment capabilities.
@@ -57,7 +57,7 @@ Looking across mainstream Agent evaluation frameworks, such as OpenAI GDPval and
 - **From "deliverable" to "process trajectory":** Agent evaluation must include transcripts, tool calls, and environmental feedback. It is not enough for the model to claim that "the task is done"; we need to evaluate whether it called the right tools and whether it can recover when tools fail.
 - **The data flywheel effect:** High-quality queries are not invented from thin air. They come from bad cases in production traces. Adding real failed queries from production to the dataset for future regression testing is one of the current best practices for building evaluation sets.
 
-The standard structure of a non-code eval query can be defined as:
+The standard structure of a complex text eval query can be defined as:
 
 ```text
 query = user task
@@ -101,7 +101,7 @@ I generally use LLM synthesis only to **generate candidates**, not to ingest que
 
 ## Write Real Task Pressure, Not Just Longer Queries
 
-The biggest risk for non-code evaluation sets is "textbook flavor": the query is so clean and well-behaved that the model can get a high score by generating a fluent paragraph.
+The biggest risk for complex text evaluation sets is "textbook flavor": the query is so clean and well-behaved that the model can get a high score by generating a fluent paragraph.
 
 A textbook-flavored version:
 
@@ -131,7 +131,7 @@ These are not noise. They are raw materials for queries. **Before a query enters
 
 ## Difficulty Scale: Six Dimensions, Twelve Points
 
-A healthy evaluation set needs a difficulty gradient. The following is a six-dimensional difficulty scale for non-code queries. Each dimension is scored from 0 to 2, for a total score of 0 to 12:
+A healthy evaluation set needs a difficulty gradient. The following is a six-dimensional difficulty scale for complex text queries. Each dimension is scored from 0 to 2, for a total score of 0 to 12:
 
 | Dimension | 0 points | 1 point | 2 points |
 | --- | --- | --- | --- |
@@ -195,7 +195,7 @@ If the list above feels too long, here is the compressed version:
 
 ## A Complete Query Example
 
-The following is a non-code eval query suitable for ingestion in an Agent scenario. Every field has a reason to exist: `environment` prevents the model from answering with generic knowledge only; `hard_checks` makes evaluation attributable; `failure_modes` gives the next iteration a direction.
+The following is a complex text eval query suitable for ingestion in an Agent scenario. Every field has a reason to exist: `environment` prevents the model from answering with generic knowledge only; `hard_checks` makes evaluation attributable; `failure_modes` gives the next iteration a direction.
 
 ```yaml
 id: ecommerce_refund_down_jacket_001
@@ -250,7 +250,7 @@ failure_modes:
 
 ## Evaluation Sets Are Not One-off Question Banks; They Need a Data Flywheel
 
-Non-code tasks change quickly, and models also "learn" old task types over iterations. A healthy evaluation set needs continuous evolution.
+Complex text tasks change quickly, and models also "learn" old task types over iterations. A healthy evaluation set needs continuous evolution.
 
 An executable data flywheel has six steps:
 
