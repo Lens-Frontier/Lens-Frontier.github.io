@@ -157,7 +157,7 @@ TRACE 的关键设计是 **Evidence Bank (证据库)**：将 agent 每步工具�
 
 ```text
 Efficiency = |ε_min| / |ε_n|
-```text
+```
 
 值为 1 表示零冗余，0.3 表示 70% 的工具调用是不必要的。
 
@@ -167,7 +167,7 @@ Efficiency = |ε_min| / |ε_n|
 
 ```text
 Hallucination = Σ H(s_t) / n，H ∈ {0, 1}
-```text
+```
 
 ##### 适应性 (Adaptivity)
 
@@ -175,7 +175,7 @@ Hallucination = Σ H(s_t) / n，H ∈ {0, 1}
 
 ```text
 Adaptivity = Σ Adp(s_{t+1}) / |F|
-```text
+```
 
 #### 关键发现
 
