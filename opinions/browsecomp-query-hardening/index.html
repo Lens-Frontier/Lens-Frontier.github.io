@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>题面写得再绕，模型照样秒解——怎么让搜索题真正变难 - Lens Frontier</title><meta name="description" content="搜索智能体训练需要难度适中的题：模型不能秒解，但认真搜索可解。我们设计了 Hardener-Solver-Critic 多智能体闭环，用模型真实求解行为增强题目难度，在 BrowseComp 风格合成题上将 62% 的样本推入了可训练区间。"><script>(function(){const measurementId = "G-ZK42116ZXB";
+
+			(() => {
+				const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+				window.dataLayer = window.dataLayer || [];
+				window.gtag =
+					window.gtag ||
+					function gtag() {
+						window.dataLayer.push(arguments);
+					};
+				if (doNotTrack) return;
+				window.gtag('js', new Date());
+				window.gtag('config', measurementId);
+
+				const loadAnalytics = () => {
+					if (document.querySelector('script[data-lens-frontier-ga]')) return;
+					const script = document.createElement('script');
+					script.async = true;
+					script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+					script.dataset.lensFrontierGa = 'true';
+					document.head.append(script);
+				};
+
+				const scheduleAnalytics = () => {
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(loadAnalytics, { timeout: 2500 });
+						return;
+					}
+					window.setTimeout(loadAnalytics, 1200);
+				};
+
+				if (document.readyState === 'complete') scheduleAnalytics();
+				else window.addEventListener('load', scheduleAnalytics, { once: true });
+			})();
+		})();</script><meta http-equiv="refresh" content="0; url=/blog/zh/opinions/browsecomp-query-hardening/"><link rel="canonical" href="https://lens-frontier.github.io/blog/zh/opinions/browsecomp-query-hardening/"></head> <body> <a href="/blog/zh/opinions/browsecomp-query-hardening/">Continue to Lens Frontier</a> </body></html>
