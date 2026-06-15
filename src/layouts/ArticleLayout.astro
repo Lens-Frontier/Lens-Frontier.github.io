@@ -90,5 +90,20 @@ const spec: SpecItem[] =
 		</div>
 		<ImageLightbox lang={lang} />
 		<PageviewTracker articleId={articleId} />
+		<script type="module" is:inline>
+			(async () => {
+				const diagrams = Array.from(document.querySelectorAll('.article-body .mermaid'));
+				if (!diagrams.length) return;
+
+				const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs');
+				mermaid.initialize({
+					startOnLoad: false,
+					theme: 'default',
+					securityLevel: 'loose',
+					flowchart: { curve: 'basis', htmlLabels: true },
+				});
+				await mermaid.run({ nodes: diagrams });
+			})().catch(() => {});
+		</script>
 	</article>
 </BaseLayout>
