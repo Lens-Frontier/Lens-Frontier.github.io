@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import remarkMermaid from './src/lib/remark-mermaid.mjs';
 
 const repositoryName = process.env.GITHUB_REPOSITORY?.split('/')[1];
 const isUserPage = repositoryName?.endsWith('.github.io');
@@ -19,6 +20,7 @@ export default defineConfig({
 	},
 	integrations: [sitemap()],
 	markdown: {
+		remarkPlugins: [remarkMermaid],
 		shikiConfig: {
 			theme: 'github-light',
 		},

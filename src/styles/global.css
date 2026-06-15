@@ -851,6 +851,14 @@ html:lang(en) .article-body {
 	text-align: center;
 }
 
+.article-body pre.mermaid {
+	border: 1px solid var(--line);
+	background: color-mix(in srgb, white 72%, var(--paper)) !important;
+	color: var(--ink) !important;
+	padding: 18px;
+	white-space: normal;
+}
+
 .article-body .mermaid svg {
 	display: block;
 	max-width: 100%;
