@@ -6,7 +6,7 @@ date: 2026-06-15
 summary: "梳理 coding agent harness 的代码库检索路线：grep、语义索引、LSP、代码地图、Search Subagent 与工具检索如何走向混合检索。"
 authors:
   - name: "孙钟恺"
-  - github: "sunzhongkai588"
+    github: "sunzhongkai588"
 
 stance: "2026 年的 coding agent 检索不会是 grep 或向量索引二选一，而会走向可验证、低噪声的混合检索。"
 tags: ["agent", "code-search", "coding-agent", "retrieval"]
@@ -333,7 +333,7 @@ case "workspaceSymbol": return lsp.workspaceSymbol(args.query ?? "")
 
 ### IDE agent：索引、grep、编辑器上下文一起用
 
-Cursor 更像 IDE harness。它有长期工作区、编辑器状态、索引缓存、团队共享能力，所以它自然会做 semantic index。但 Cursor 2026 年几篇工程文章也说明了一件事：**即使有 semantic index，agent 仍然爱用 grep。** 这不是我说 Cursor “公开了路线图”，而是说它公开的工程文章能反映出实际 harness 设计正在走混合检索。[[6]](https://cursor.com/blog/secure-codebase-indexing) [[7]](https://cursor.com/blog/fast-regex-search) [[8]](https://cursor.com/blog/dynamic-context-discovery) [[9]](https://cursor.com/blog/continually-improving-agent-harness)
+Cursor 更像 IDE harness。它有长期工作区、编辑器状态、索引缓存、团队共享能力，所以它自然会做 semantic index。但 Cursor 2026 年几篇工程文章也说明了一件事：**即使有 semantic index，agent 仍然爱用 grep。** 同时 Cursor 公开的工程文章能反映出其实际 harness 设计正在走混合检索。[[6]](https://cursor.com/blog/secure-codebase-indexing) [[7]](https://cursor.com/blog/fast-regex-search) [[8]](https://cursor.com/blog/dynamic-context-discovery) [[9]](https://cursor.com/blog/continually-improving-agent-harness)
 
 可以拆成两层看：IDE 在后台长期维护上下文服务；用户提问后，Agent 只向这个服务取候选文件和行范围，再读取必要原文。
 
@@ -503,7 +503,7 @@ flowchart TB
 
 **第二，检索要单独评估。** ContextBench、SWE Context Bench、SWE-Explore、CORE-Bench 这类更新的工作把 coding agent 的“是否找到了正确上下文”从最终 pass rate 里拆出来，看 file/block/line 级别的 recall、precision、ranking 和 efficiency。这比只问“任务最后过没过”更接近问题本身。[[17]](https://arxiv.org/abs/2602.05892) [[18]](https://arxiv.org/abs/2602.08316) [[19]](https://arxiv.org/abs/2606.07297) [[20]](https://arxiv.org/abs/2606.11864)
 
-**第三，grep 是强 baseline，但不是宗教。** 2026 年围绕 grep、vector retrieval、agent harness 的实验都在说明一件事：grep 在代码里非常强，尤其有函数名、错误消息、测试名这类字面关键词时；但结果强弱很依赖工具输出怎么呈现、模型怎么调用工具、harness 怎么控制上下文。[[21]](https://arxiv.org/abs/2605.15184) [[22]](https://arxiv.org/abs/2601.23254)
+**第三，grep 很好用，但不是万能的。** 2026 年围绕 grep、vector retrieval、agent harness 的实验都在说明一件事：grep 在代码里非常强，尤其有函数名、错误消息、测试名这类字面关键词时；但结果强弱很依赖工具输出怎么呈现、模型怎么调用工具、harness 怎么控制上下文。[[21]](https://arxiv.org/abs/2605.15184) [[22]](https://arxiv.org/abs/2601.23254)
 
 **第四，符号图谱和结构导航补的是另一类问题。** Codebase-Memory、CodeCompass、Aider 代码地图这类方向说明，隐藏依赖、调用链、跨文件结构不一定能靠关键词解决。LSP、代码地图、符号图谱不会替代 grep，但会减少盲搜。[[23]](https://arxiv.org/abs/2603.27277) [[24]](https://arxiv.org/abs/2602.20048) [[11]](https://aider.chat/docs/repomap.html)
 
