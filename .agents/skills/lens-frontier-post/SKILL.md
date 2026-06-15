@@ -10,24 +10,27 @@ Use this skill inside the `Lens-Frontier/blog` repository when helping someone c
 ## Workflow
 
 1. Inspect `git status --short` first. Do not overwrite unrelated user changes.
-2. Use fork-based PRs for normal article and site changes, even when the user has write access to `Lens-Frontier/blog`. Push topic branches to the contributor fork, then open a PR back to `Lens-Frontier/blog`.
-3. Before pushing to an existing branch or updating an existing PR, check the PR state with `gh pr view <number> --json state,headRefName,baseRefName,headRefOid`. If the PR is `MERGED` or `CLOSED`, do not keep pushing to that old branch as if the PR were still active. Create a fresh branch from the latest `origin/main`, carry the intended changes there, and open a new PR from the fork.
-4. Read the relevant local docs before editing:
+2. Fetch the latest upstream state before starting new work: `git fetch origin main`. For new PRs, branch from `origin/main`.
+3. Use fork-based PRs for normal article and site changes, even when the user has write access to `Lens-Frontier/blog`. Confirm the contributor fork remote before pushing, push topic branches to that fork, then open a PR back to `Lens-Frontier/blog`.
+4. Before pushing to an existing branch or updating an existing PR, check the PR state with `gh pr view <number> --json state,headRefName,baseRefName,headRefOid`. If the PR is `MERGED` or `CLOSED`, do not keep pushing to that old branch as if the PR were still active. Create a fresh branch from the latest `origin/main`, carry the intended changes there, and open a new PR from the fork.
+5. Do not edit article body content when the task is about site styling, CI, performance, analytics, docs, or tooling unless the user explicitly asks for article-content changes. Keep content edits scoped to the requested article or review target.
+6. Read the relevant local docs before editing:
    - `README.md`
    - `CONTRIBUTING.md`
    - `src/content.config.ts`
    - the matching file in `templates/`
-5. Choose the collection:
+7. Choose the collection:
    - `src/content/papers/<slug>.md` for reading-share notes about papers.
    - `src/content/benchmarks/<slug>.md` for benchmark observations.
    - `src/content/opinions/<slug>.md` for benchmark-facing opinions.
-6. Use lowercase kebab-case slugs. Prefer `post/<slug>` for the branch name.
-7. Copy the relevant template structure manually into the new Markdown file and complete frontmatter.
-8. Set `lang: "zh"` or `lang: "en"` in frontmatter. Single-language publication is allowed; do not invent a translation just to fill both routes. If a translated counterpart exists later, give both posts the same `translationKey` so the language switch can stay on the matching article.
-9. Keep `authors` as site authors, not paper authors. For recurring authors, prefer `id` from `src/data/authors.ts`. If the author is not in the registry, either add them there or include at least `name` or `github` inline. Do not add `avatar` by default because the site automatically uses `https://github.com/<github>.png?size=96` when `github` exists. Add `avatar` only when a custom image is needed.
-10. Put post images under `src/assets/posts/<collection>/<slug>/` only; do not duplicate them under `public/assets/posts/`. Put author avatars under `public/assets/authors/`.
-11. Run `pnpm check` before proposing or opening a PR. It includes syntax checks, Markdown lint, content rules, blocking Chinese quote-pair checks, sensitive-content checks, asset hard-limit checks, image recommendation warnings, production build, built-page link/i18n checks, and non-blocking warnings for likely unrendered Markdown markers. When it fails, read the final `Failed checks` summary first.
-12. If the user asks to open the PR and credentials are available, push the branch to the fork and use `gh pr create --repo Lens-Frontier/blog`. Use a clear title prefix: `post: <article title>` for articles, `docs:`, `site:`, or `chore:` for non-article changes.
+8. Use lowercase kebab-case slugs. Prefer `post/<slug>` for the branch name.
+9. Copy the relevant template structure manually into the new Markdown file and complete frontmatter.
+10. Set `lang: "zh"` or `lang: "en"` in frontmatter. Single-language publication is allowed; do not invent a translation just to fill both routes. If a translated counterpart exists later, give both posts the same `translationKey` so the language switch can stay on the matching article.
+11. Keep `authors` as site authors, not paper authors. For recurring authors, prefer `id` from `src/data/authors.ts`. If the author is not in the registry, either add them there or include at least `name` or `github` inline. Do not add `avatar` by default because the site automatically uses `https://github.com/<github>.png?size=96` when `github` exists. Add `avatar` only when a custom image is needed.
+12. Put post images under `src/assets/posts/<collection>/<slug>/` only; do not duplicate them under `public/assets/posts/`. Put author avatars under `public/assets/authors/`.
+13. Run `pnpm check` before proposing or opening a PR. It includes syntax checks, Markdown lint, content rules, blocking Chinese quote-pair checks, sensitive-content checks, asset hard-limit checks, image recommendation warnings, analytics smoke checks, production build, and built-page metadata/link/i18n/RSS/GA/pageview checks. It also writes non-blocking warnings for likely unrendered Markdown markers. When it fails, read the final `Failed checks` summary first.
+14. If the user asks to open the PR and credentials are available, push the branch to the fork and use `gh pr create --repo Lens-Frontier/blog`. Use a clear title prefix: `post: <article title>` for articles, `docs:`, `site:`, or `chore:` for non-article changes.
+15. After opening or updating a PR, check required CI status and the PR preview comment. Do not report that the PR is fully ready until `syntax` and `check` pass and the preview bot comment exists, or explicitly say what is still pending or missing.
 
 ## Required Article Standards
 
@@ -62,12 +65,19 @@ Use this skill inside the `Lens-Frontier/blog` repository when helping someone c
 - Every Markdown image needs meaningful alt text.
 - Avoid committing large videos, animated images, or datasets. Mention the need in the PR instead.
 
+## Markdown And Preview QA
+
+- CI checks core Markdown rendering with a smoke article, but real article layout still needs a human preview pass.
+- Before marking an article PR ready, inspect the local page or PR preview for tables, code fences, blockquotes, lists, horizontal rules, images, captions, HTML image sizing, Chinese quote direction, and bold / italic markers.
+- Treat rendered-Markdown warnings in the GitHub Actions summary as review items. They do not always block CI, but they should be explained or fixed before merge.
+- For posts with images, verify that images render from `src/assets/posts/<collection>/<slug>/`, can be opened in the article lightbox, and are not duplicated under `public/assets/posts/`.
+
 ## PR Behavior
 
 Every PR runs CI with two required jobs:
 
-- `syntax`: workflow lint plus Astro / TypeScript / Worker syntax checks.
-- `check`: content, blocking Chinese quote pairs, assets, image recommendations, production build, and dist checks.
+- `syntax`: workflow lint plus Astro / TypeScript checks and Pageview Worker syntax / behavior checks.
+- `check`: Markdown lint, content rules, sensitive-content scan, blocking Chinese quote pairs, asset hard limits, image recommendation warnings, analytics smoke build, production build, and dist checks for metadata, links, i18n, RSS, GA/pageview toggles, and possible unrendered Markdown.
 
 After CI succeeds, the PR Preview workflow publishes a commit-scoped preview at:
 
@@ -85,4 +95,6 @@ When finished, summarize:
 - author display choice, including GitHub avatar or custom avatar
 - image/asset paths, if any
 - `pnpm check` result
+- required CI status, if a PR was opened or updated
+- preview URL and whether the preview bot comment exists, if a PR was opened or updated
 - PR URL or the exact command the user should run next

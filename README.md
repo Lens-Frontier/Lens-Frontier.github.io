@@ -15,7 +15,15 @@ pnpm dev
 
 PR 会自动运行 CI，分成 `syntax` 和 `check` 两个 job：`syntax` 覆盖 workflow / Astro / TypeScript / Worker 语法，`check` 覆盖 Markdown、内容规范、中文引号配对、资产硬限制、图片建议提示、analytics smoke、生产构建和构建产物检查。中文引号配对属于硬性阻断；构建产物检查会对疑似未渲染的 Markdown 标记输出 warning，并写入 GitHub Actions summary，但不阻塞 CI。CI 成功后，机器人会在 PR comment 里输出带 commit hash 的预览链接。
 
-如果使用 Codex 或 Claude Code 辅助投稿，可以让它读取仓库内的 `.agents/skills/lens-frontier-post` skill，按统一流程创建文章、检查内容和资产、运行 CI 前校验并准备 PR。
+### Agent 辅助投稿
+
+如果使用 Codex、Claude Code 或其他 coding agent 辅助投稿，请先让 agent 读取仓库内的 `.agents/skills/lens-frontier-post/SKILL.md`，再开始创建或修改文章。可以直接把这句话放在任务开头：
+
+```txt
+请先读取 .agents/skills/lens-frontier-post/SKILL.md，并按其中流程从个人 fork 新建分支、运行检查、向 Lens-Frontier/blog 提交 PR。
+```
+
+这个 Skill 会约束文章模板、作者信息、图片目录、CI 检查、PR 预览和旧 PR 状态检查。Agent 辅助投稿仍然默认走 fork PR，并且需要 CI 通过和维护者 review 后才能合入。
 
 ## 内容目录
 
