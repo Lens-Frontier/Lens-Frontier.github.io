@@ -34,6 +34,7 @@ function deriveCountEndpoint(endpoint?: string) {
 			data-article-views
 			data-loading-label={labels.viewsLoading}
 			aria-label={`${labels.views}: ${labels.viewsLoading}`}
+			hidden
 		>
 			<span>{labels.views}</span>
 			<strong data-view-count>--</strong>

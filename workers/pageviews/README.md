@@ -30,13 +30,15 @@ wrangler deploy
 Set the production build variable:
 
 ```txt
-PUBLIC_PAGEVIEW_ENDPOINT=https://<worker-domain>/pageview
-PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<worker-domain>/views
+PUBLIC_PAGEVIEW_ENDPOINT=https://<pageview-api-domain>/pageview
+PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<pageview-api-domain>/views
 PUBLIC_PAGEVIEW_SITE_ID=lens-frontier
 ```
 
 `PUBLIC_PAGEVIEW_COUNT_ENDPOINT` is optional when the read endpoint is the same Worker with `/views`; the site can derive it from `/pageview`.
 
 Do not configure these variables for PR previews unless preview traffic should also be counted.
+
+Use a Worker Custom Domain, Worker route, or stable Pages Functions endpoint for production. Avoid relying on `*.workers.dev` for the public site, because that default endpoint can be less reliable on some networks.
 
 For a custom production domain, set `ALLOWED_ORIGIN` in the Worker environment.

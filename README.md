@@ -52,11 +52,11 @@ src/content/opinions     # 围绕 benchmark 的观点文章
 
 文章页支持 first-party 阅读量展示。默认不启用；生产环境配置后，文章标题下方会显示阅读量。展示用阅读量按 pageview 计数，刷新页面会增加一次；Worker 后台仍会单独保存按天去重的匿名访客事件，供后续分析使用，但站点不展示这个去重值。
 
-如需开启，先部署 `workers/pageviews` 里的 Cloudflare Worker + D1，再在生产构建中配置：
+如需开启，先部署 `workers/pageviews` 里的 Cloudflare Worker + D1，再在生产构建中配置。生产环境建议使用 Worker Custom Domain、Worker route 或稳定的 Pages Functions 地址，不建议长期依赖 `*.workers.dev` 作为正式阅读量接口：
 
 ```txt
-PUBLIC_PAGEVIEW_ENDPOINT=https://<worker-domain>/pageview
-PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<worker-domain>/views
+PUBLIC_PAGEVIEW_ENDPOINT=https://<pageview-api-domain>/pageview
+PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<pageview-api-domain>/views
 PUBLIC_PAGEVIEW_SITE_ID=lens-frontier
 ```
 
