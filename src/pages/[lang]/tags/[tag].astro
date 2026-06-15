@@ -3,7 +3,7 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import EntryRow from '../../../components/EntryRow.astro';
 import { languages, languageFrom, ui } from '../../../lib/site';
-import { collectionNames } from '../../../lib/content';
+import { collectionNames, tagsForLanguage } from '../../../lib/content';
 
 export async function getStaticPaths() {
 	const paths = [];
@@ -25,7 +25,14 @@ export async function getStaticPaths() {
 const lang = languageFrom(Astro.props.lang);
 const { tag } = Astro.props;
 const labels = ui[lang].pages.tags;
-const alternatePath = `/tags/${encodeURIComponent(tag)}/`;
+const alternatePath = Object.fromEntries(
+	await Promise.all(
+		languages.map(async (targetLang) => {
+			const tags = await tagsForLanguage(targetLang);
+			return [targetLang, tags.includes(tag) ? `/tags/${encodeURIComponent(tag)}/` : '/tags/'];
+		}),
+	),
+);
 const entriesByCollection = await Promise.all(
 	collectionNames.map(async (collection) => ({
 		collection,
