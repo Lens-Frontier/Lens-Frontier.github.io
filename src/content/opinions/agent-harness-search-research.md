@@ -5,7 +5,7 @@ translationKey: "agent-harness-search-research"
 date: 2026-06-15
 summary: "梳理 coding agent harness 的代码库检索路线：grep、语义索引、LSP、代码地图、Search Subagent 与工具检索如何走向混合检索。"
 authors:
-  - name: "sunzhongkai"
+  - name: "sunzhongkai588"
 stance: "2026 年的 coding agent 检索不会是 grep 或向量索引二选一，而会走向可验证、低噪声的混合检索。"
 tags: ["agent", "code-search", "coding-agent", "retrieval"]
 ---
