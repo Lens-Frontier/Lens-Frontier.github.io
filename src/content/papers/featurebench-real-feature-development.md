@@ -2,7 +2,7 @@
 title: "论文精读 | FeatureBench：跳出Bug修复，直面AI编码代理的真实功能开发难题"
 lang: "zh"
 date: 2026-06-16
-summary: "FeatureBench聚焦真实软件开发中更核心、更复杂的功能开发，依托自动化流水线构建任务、支持可执行评测与持续迭代。在 Bug 修复基准中表现优秀的大模型，在此数据集上表现大幅下滑，可见当前 AI 距离独立开发复杂功能仍有较大差距。"
+summary: "FeatureBench 面向真实功能开发场景，依托自动化流水线支持可执行评测与持续迭代。论文结果显示，当前 AI 独立开发复杂功能的能力依然薄弱。"
 authors:
   - name: "张颖"
     github: "BBTDR"
@@ -15,8 +15,6 @@ tasks: ["coding-agent", "feature-development"]
 tags: ["benchmark", "agentic-coding", "evaluation", "feature-development"]
 status: "read"
 ---
-
-> FeatureBench 面向真实功能开发场景，依托自动化流水线支持可执行评测与持续迭代。实验结果显示，当前 AI 独立开发复杂功能的能力依然薄弱。
 
 ## 一、为什么需要FeatureBench？
 
