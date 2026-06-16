@@ -1,5 +1,5 @@
 ---
-title: "论文精读 | FeatureBench：跳出Bug修复，直面AI编码代理的真实功能开发难题"
+title: "论文精读 | FeatureBench：跳出Bug修复，直面code agent的真实功能开发难题"
 lang: "zh"
 date: 2026-06-16
 summary: "FeatureBench 面向真实功能开发场景，依托自动化流水线支持可执行评测与持续迭代。论文结果显示，当前 AI 独立开发复杂功能的能力依然薄弱。"
