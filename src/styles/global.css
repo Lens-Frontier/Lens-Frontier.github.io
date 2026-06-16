@@ -839,6 +839,33 @@ html:lang(en) .article-body {
 	line-height: 1.75;
 }
 
+.article-body .mermaid {
+	margin: 1.8em 0 2em;
+	border: 1px solid var(--line);
+	background: color-mix(in srgb, white 72%, var(--paper));
+	padding: 18px;
+	overflow-x: auto;
+	font-family: var(--font-sans);
+	font-size: 0.88rem;
+	line-height: 1.45;
+	text-align: center;
+}
+
+.article-body pre.mermaid {
+	border: 1px solid var(--line);
+	background: color-mix(in srgb, white 72%, var(--paper)) !important;
+	color: var(--ink) !important;
+	padding: 18px;
+	white-space: normal;
+}
+
+.article-body .mermaid svg {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: 0 auto;
+}
+
 .article-body table {
 	display: block;
 	width: 100%;

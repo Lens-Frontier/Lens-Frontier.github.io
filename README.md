@@ -15,7 +15,15 @@ pnpm dev
 
 PR 会自动运行 CI，分成 `syntax` 和 `check` 两个 job：`syntax` 覆盖 workflow / Astro / TypeScript / Worker 语法，`check` 覆盖 Markdown、内容规范、中文引号配对、资产硬限制、图片建议提示、analytics smoke、生产构建和构建产物检查。中文引号配对属于硬性阻断；构建产物检查会对疑似未渲染的 Markdown 标记输出 warning，并写入 GitHub Actions summary，但不阻塞 CI。CI 成功后，机器人会在 PR comment 里输出带 commit hash 的预览链接。
 
-如果使用 Codex 或 Claude Code 辅助投稿，可以让它读取仓库内的 `.agents/skills/lens-frontier-post` skill，按统一流程创建文章、检查内容和资产、运行 CI 前校验并准备 PR。
+### Agent 辅助投稿
+
+如果使用 Codex、Claude Code 或其他 coding agent 辅助投稿，请先让 agent 读取仓库内的 `.agents/skills/lens-frontier-post/SKILL.md`，再开始创建或修改文章。可以直接把这句话放在任务开头：
+
+```txt
+请先读取 .agents/skills/lens-frontier-post/SKILL.md，并按其中流程从个人 fork 新建分支、运行检查、向 Lens-Frontier/blog 提交 PR。
+```
+
+这个 Skill 会约束文章模板、作者信息、图片目录、CI 检查、PR 预览和旧 PR 状态检查。Agent 辅助投稿仍然默认走 fork PR，并且需要 CI 通过和维护者 review 后才能合入。
 
 ## 内容目录
 
@@ -52,11 +60,11 @@ src/content/opinions     # 围绕 benchmark 的观点文章
 
 文章页支持 first-party 阅读量展示。默认不启用；生产环境配置后，文章标题下方会显示阅读量。展示用阅读量按 pageview 计数，刷新页面会增加一次；Worker 后台仍会单独保存按天去重的匿名访客事件，供后续分析使用，但站点不展示这个去重值。
 
-如需开启，先部署 `workers/pageviews` 里的 Cloudflare Worker + D1，再在生产构建中配置：
+如需开启，先部署 `workers/pageviews` 里的 Cloudflare Worker + D1，再在生产构建中配置。生产环境建议使用 Worker Custom Domain、Worker route 或稳定的 Pages Functions 地址，不建议长期依赖 `*.workers.dev` 作为正式阅读量接口：
 
 ```txt
-PUBLIC_PAGEVIEW_ENDPOINT=https://<worker-domain>/pageview
-PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<worker-domain>/views
+PUBLIC_PAGEVIEW_ENDPOINT=https://<pageview-api-domain>/pageview
+PUBLIC_PAGEVIEW_COUNT_ENDPOINT=https://<pageview-api-domain>/views
 PUBLIC_PAGEVIEW_SITE_ID=lens-frontier
 ```
 
