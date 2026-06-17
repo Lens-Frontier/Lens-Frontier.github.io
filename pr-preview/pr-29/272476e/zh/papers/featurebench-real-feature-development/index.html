@@ -1,0 +1,590 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="generator" content="Astro v6.3.3"><title>论文精读 | FeatureBench：面向端到端真实开发场景的Code Agent能力评估框架 - Lens Frontier</title><meta name="description" content="FeatureBench 面向真实功能开发场景，依托自动化流水线支持可执行评测与持续迭代。论文结果显示，当前 AI 独立开发复杂功能的能力依然薄弱。"><link rel="canonical" href="https://lens-frontier.github.io/blog/pr-preview/pr-29/272476e/zh/papers/featurebench-real-feature-development/"><link rel="alternate" hreflang="zh-CN" href="/blog/pr-preview/pr-29/272476e/zh/papers/featurebench-real-feature-development/"><link rel="alternate" hreflang="en" href="/blog/pr-preview/pr-29/272476e/en/papers/"><link rel="icon" type="image/svg+xml" href="/blog/pr-preview/pr-29/272476e/favicon.svg"><link rel="stylesheet" href="/blog/pr-preview/pr-29/272476e/_astro/BaseLayout.4xSog4TF.css"></head> <body> <div class="shell"> <header class="site-header"> <a class="brand" href="/blog/pr-preview/pr-29/272476e/zh/"> <span class="brand-mark">LF</span> <span> <strong>Lens Frontier</strong> <small>papers benchmarks opinions</small> </span> </a> <div class="header-actions"> <nav class="nav" aria-label="Primary navigation"> <a href="/blog/pr-preview/pr-29/272476e/zh/papers/">Papers</a><a href="/blog/pr-preview/pr-29/272476e/zh/benchmarks/">Benchmarks</a><a href="/blog/pr-preview/pr-29/272476e/zh/opinions/">Opinions</a><a href="/blog/pr-preview/pr-29/272476e/zh/tags/">Tags</a> </nav> <nav class="lang-switch" aria-label="Language switcher"> <a href="/blog/pr-preview/pr-29/272476e/zh/papers/featurebench-real-feature-development/" aria-current="true"> 中文 </a><a href="/blog/pr-preview/pr-29/272476e/en/papers/"> EN </a> </nav> </div> </header> <main>  <article class="article" data-analytics-page="article" data-analytics-article-id="papers/featurebench-real-feature-development" data-analytics-collection="papers" data-analytics-lang="zh"> <header class="article-header"> <p class="eyebrow">paper</p> <h1>论文精读 | FeatureBench：面向端到端真实开发场景的Code Agent能力评估框架</h1> <p class="dek">FeatureBench 面向真实功能开发场景，依托自动化流水线支持可执行评测与持续迭代。论文结果显示，当前 AI 独立开发复杂功能的能力依然薄弱。</p> <div class="article-byline"> <ul class="authors" aria-label="Authors"><li><img src="https://github.com/BBTDR.png?size=96" alt="张颖 avatar" loading="lazy"><span><a class="author-name" href="https://github.com/BBTDR" target="_blank" rel="noreferrer"><strong>张颖</strong></a><a href="https://github.com/BBTDR" target="_blank" rel="noreferrer">@BBTDR</a></span></li></ul>  </div> <dl class="spec-table"><div><dt>日期</dt><dd>2026/06/16</dd></div><div><dt>论文作者</dt><dd>Qixing Zhou, Jiacheng Zhang, Haiyang Wang, Rui Hao, Jiahe Wang, Minghao Han, Yuxue Yang, Shuzhe Wu, Feiyang Pan, Lue Fan, Dandan Tu, Zhaoxiang Zhang</dd></div><div><dt>发表位置</dt><dd>arXiv 2025</dd></div><div><dt>Benchmarks</dt><dd>FeatureBench, SWE-bench</dd></div><div><dt>任务</dt><dd>coding-agent, feature-development</dd></div><div><dt>状态</dt><dd>read</dd></div></dl> <div class="article-actions"> <a href="https://arxiv.org/abs/2602.10975">Paper</a> <a href="https://github.com/LiberCoders/FeatureBench">Code</a> </div> <div class="tag-list"> <a href="/blog/pr-preview/pr-29/272476e/zh/tags/benchmark/">benchmark</a><a href="/blog/pr-preview/pr-29/272476e/zh/tags/agentic-coding/">agentic-coding</a><a href="/blog/pr-preview/pr-29/272476e/zh/tags/evaluation/">evaluation</a><a href="/blog/pr-preview/pr-29/272476e/zh/tags/feature-development/">feature-development</a> </div> </header> <div class="article-body">  <h2 id="一为什么需要featurebench">一、为什么需要FeatureBench？</h2>
+<p>如今，Code Agent早已不是光标旁单纯补全程式的辅助工具，Claude code，codex等知名agent似乎已经具备了直接投入生产的能力，向端到端自主软件开发演进已是大势所趋。然而在真实的企业开发环境使用过程中，却发现模型远没有想象中那么能打——一遇到跨文件修改就掉链子，新功能好不容易堆上去，旧逻辑在不知不觉间又崩了，实在让人头疼。</p>
+<p>明明在主流Bench上包揽冠亚军的模型，怎么在真实场景上表现不佳？其实模型没变笨，Bench也没作弊，只是传统评测基准跟真实的业务场景之间，确实有点”水土不服”。</p>
+<ol>
+<li><strong>任务场景单一</strong>：以SWE-bench为代表的主流基准，核心任务集中于单PR的Bug修复，功能开发类任务仅占18%–22%，难以覆盖真实的”新增功能”开发需求。</li>
+<li><strong>数据采集困难</strong>：传统基准依赖人工从PR/Commit中筛选样本，而真实功能开发常横跨多个Commit和PR，人工关联成本高且易遗漏。</li>
+<li><strong>评估方式主观</strong>：部分基准缺乏可执行的自动化测试，依赖人工或LLM主观判断，结果客观性不足。</li>
+<li><strong>数据泄露风险</strong>：静态数据集无法动态更新，模型可能在训练中”见过”评测数据，导致分数虚高，无法反映真实能力。</li>
+</ol>
+<p>针对上述问题，为更贴近生产实践、有效衡量模型能力边界，<strong>FeatureBench</strong> 应运而生。</p>
+<h2 id="二featurebench-核心定位与四大核心特性">二、FeatureBench 核心定位与四大核心特性</h2>
+<p>FeatureBench 是一套由中科院自动化所与华为联合团队打造，针对”从零/基于现有代码新增完整功能”这一真实开发场景的code agent评测基准。
+通过对比现有Bench，可以直观看到FeatureBench 是目前少数同时满足<strong>功能导向、自动化执行评测、规模化采集、持续迭代</strong>四大条件的编码基准。</p>
+<p><img alt="FeatureBench与现有基准对比" loading="lazy" decoding="async"  width="1964" height="824" src="/blog/pr-preview/pr-29/272476e/_astro/table1.BcBIelRJ_r3lh1.webp" ></p>
+<h3 id="1-聚焦真实功能开发划分两大难度场景">1. 聚焦真实功能开发，划分两大难度场景</h3>
+<p>FeatureBench的所有任务均围绕<strong>新增完整功能</strong>，而非Bug Fix进行设计。任务分为两个难度等级用于完全模拟两种真实开发模式：</p>
+<ul>
+<li><strong>L1（增量开发）</strong>：基于现有代码库补充缺失功能，代码上下文完整，是企业最常见的迭代模式；</li>
+<li><strong>L2（从零开发）</strong>：无任何原有代码，仅根据接口文档独立实现整套功能，难度更高。</li>
+</ul>
+<p>Bench中每个任务都会提供<strong>清晰的函数接口、调用路径、输入输出规范</strong>，要求模型输出<strong>可直接调用</strong>的代码，从根源避免”实现逻辑和测试用例不匹配”的问题。</p>
+<h3 id="2-基于单元测试进行功能描述源头消除实现歧义">2. 基于单元测试进行功能描述，源头消除实现歧义</h3>
+<p>传统基准多依赖自然语言描述，缺乏标准化的代码接口定义，容易导致多种合法实现，难以自动化校验；部分基准甚至无可执行测试，只能依靠人工或LLM评判。</p>
+<p>FeatureBench 采用测试驱动设计，任务描述直接绑定从源码自动提取的原生接口（明确类名、函数名、参数类型、返回值、文件路径、导入规则等），确保实现规范唯一，评测标准严谨。</p>
+<h3 id="3-自动化数据采集流水线极低人工成本">3. 自动化数据采集流水线，极低人工成本</h3>
+<p>传统基准依赖人工筛选PR，而FeatureBench 设计了一套<strong>依赖图追踪+单元测试驱动</strong>的全自动采集流程，仅需人工配置仓库安装命令（单个仓库约3分钟），其余步骤全部自动化实现。这套流程可以从任意Python开源仓库批量生成评测任务，摆脱了对人工PR/Commit的依赖，具备极强的扩展性。</p>
+<h3 id="4-可持续更新规避数据泄露">4. 可持续更新，规避数据泄露</h3>
+<p>依托自动化采集工具，FeatureBench 可以持续从新的代码仓库、新的代码提交中生成新任务。模型无法”刷题库”，有效保证了长期评测结果的真实性。</p>
+<h2 id="三核心技术基于动态依赖图的全自动任务提取算法">三、核心技术：基于动态依赖图的全自动任务提取算法</h2>
+<p>传统基准（如SWE-bench）依托Commit/PR划分任务，但真实仓库的功能开发相关代码往往分散于多个PR/Commit，人工关联成本高。单纯按提交记录切分代码无法区分新功能与公共代码，很容易破坏仓库原有逻辑。</p>
+<p>FeatureBench提出了一套全自动化流水线的数据构造方法，可以从开源Python仓库中自动剥离未实现的功能代码，同时保留其他所有模块完整性，最终生成合规的评测任务。整套流程仅需人工完成仓库环境配置，其余步骤全部自动化执行，有效提升了数据构造效率。</p>
+<p><img alt="基于动态依赖图的全自动任务提取流水线" loading="lazy" decoding="async"  width="1610" height="1422" src="/blog/pr-preview/pr-29/272476e/_astro/pipeline.BdNFgNMX_Z1bVrzY.webp" ></p>
+<h3 id="step-0f2p--p2p-测试筛选">step 0：F2P / P2P 测试筛选</h3>
+<p>依赖图的构建完全依托仓库内的单元测试，通过调用 pytest 工具自动扫描仓库内所有合法测试文件后，保留可正常执行、无环境报错的测试用例。进一步需要区分 F2P、P2P 两类测试集合，规则如下：</p>
+<ol>
+<li><strong>F2P（Fail-to-Pass）测试</strong>
+指代<strong>针对目标待实现功能</strong>的单元测试。在原始仓库中移除目标功能后，这类测试执行结果为<strong>失败</strong>；当 AI 正确实现对应功能后，测试必须全部通过。在单任务配置中，默认仅选取<strong>1 个 F2P 测试文件</strong>作为核心测试主体。</li>
+<li><strong>P2P（Pass-to-Pass）测试</strong>
+指代<strong>仓库原有存量功能</strong>的单元测试。无论是否新增目标功能，这类测试都必须持续正常运行、全部通过，用于保证新代码不会破坏项目原有逻辑。流水线会随机筛选 <strong>5 个 P2P 测试文件</strong>作为基准。</li>
+</ol>
+<h3 id="step-1动态运行时对象依赖图构建graph-construction">step 1：动态运行时对象依赖图构建（Graph Construction）</h3>
+<p>FeatureBench <strong>没有使用静态语法树或静态依赖分析</strong>，而是采用 <strong>Python 运行时动态追踪</strong> 的方式构建依赖图。</p>
+<p>该方法从已筛选的 F2P 测试与 P2P 测试入手，在代码运行过程中，通过 <strong>Python 原生运行时追踪工具</strong> 捕获全程函数调用事件，并基于真实调用关系构建 <strong>有向依赖图</strong>。图中点与边的定义如下：</p>
+<ul>
+<li><strong>节点（Node）</strong>：对应仓库中的一个函数或类方法，即代码可执行单元；</li>
+<li><strong>有向边（Edge）</strong>：从节点 A 指向节点 B，表示 A 在运行过程中调用了 B，反映真实代码调用关系。</li>
+</ul>
+<p>每个节点都带有完整的属性信息，用于后续节点分类、图遍历及后置校验，具体包括：</p>
+<ol>
+<li>全局唯一节点 ID；</li>
+<li>对应代码文件路径与行号；</li>
+<li>当前节点的所有下游依赖节点列表（即该节点直接调用的函数/方法）；</li>
+<li>布尔标记位，标识该节点是否在 P2P 测试执行过程中被触发调用。</li>
+</ol>
+<p>经过上述步骤，最终生成的依赖图可以完整还原 F2P 目标功能与 P2P 存量功能在运行时的全部函数调用链路及依赖关系。</p>
+<h3 id="step-2llm-辅助顶层对象分类top-object-classification">step 2：LLM 辅助顶层对象分类（Top Object Classification）</h3>
+<p>依赖图构建完成后，需要进一步判定图中哪些节点属于”待实现的目标功能”。论文采用 <strong>LLM 分类器 + 人工标注校验</strong> 相结合的方案，针对 F2P 测试中涉及的导入对象，将其划分为两类：</p>
+<ol>
+<li><strong>被测试对象（Tested Object）</strong>：即 F2P 测试核心验证的顶层接口/函数/类，也是本次任务需要实现的目标功能入口；</li>
+<li><strong>非测试对象</strong>：包括测试辅助工具、通用工具函数、底层公共组件、测试框架依赖等，不属于目标功能范畴。</li>
+</ol>
+<p>将 <strong>F2P 测试文件内容、文件路径及文件内所有导入对象列表</strong> 输入 LLM，按照上述规则完成自动分类。分类完成后，提取所有被标记为”被测试对象”的导入对象所对应的图节点，作为后续 <strong>广度优先遍历（BFS）的起始入口节点</strong>。</p>
+<h3 id="step-3基于依赖图的广度优先遍历bfs与节点标记">step 3：基于依赖图的广度优先遍历（BFS）与节点标记</h3>
+<p>以 LLM 识别出的目标功能入口节点为起点，在整张依赖图上执行 BFS 遍历，并对途经节点做二元标记，以此划分代码边界。节点划分为两类：</p>
+<ol>
+<li>
+<p><strong>Remained（保留节点）</strong>：在 P2P 测试执行过程中被调用过，属于仓库原有公共代码或存量功能组件。遍历遇到此类节点时<strong>立即停止向下遍历</strong>，不访问其下游依赖，确保公共代码不被改动。</p>
+</li>
+<li>
+<p><strong>Extracted（待提取节点）</strong>：仅被 F2P 测试调用，未出现在任何 P2P 测试链路中，属于本次任务的目标功能代码。继续遍历其下游依赖，直到触达 Remained 节点为止。</p>
+</li>
+</ol>
+<p>为保证任务体量贴合真实功能开发场景，遍历过程增加行数限制：单次任务提取的代码总行数控制在 <strong>3000 ~ 5000 行</strong> 区间内，达到上限后自动终止遍历。</p>
+<p>BFS 结束后，全图节点完成划分：</p>
+<ul>
+<li>Extracted 节点集合即为完整的目标功能代码集合</li>
+<li>Remained 节点为仓库原有保留代码</li>
+</ul>
+<h3 id="step-4基于节点标记的代码提取与任务素材生成">step 4：基于节点标记的代码提取与任务素材生成</h3>
+<p>根据 BFS 得到的节点标记结果，对原始代码仓库进行代码拆分，生成两套核心代码产物：</p>
+<ol>
+<li>
+<p><strong>生成”缺失目标功能的基础代码库”</strong>
+从原始仓库中，<strong>删除所有 Extracted 节点对应的代码片段</strong>。此时仓库保留全部公共代码、存量功能，唯独移除了待实现的新功能，作为给到 AI 代理的原始代码环境。</p>
+</li>
+<li>
+<p><strong>生成标准 Git 补丁文件（Gold Patch）</strong>
+将所有被删除的 Extracted 节点代码，整合为标准 git diff 格式补丁，作为该任务的<strong>标准答案</strong>。</p>
+</li>
+<li>
+<p>自动生成任务描述与接口文档
+结合依赖图节点信息、原始代码、测试用例，自动生成任务文本：</p>
+<ul>
+<li>明确功能需求；</li>
+<li>强制标注<strong>类名、函数名、参数、返回值、文件路径、导入路径</strong>等严格接口规范；</li>
+<li>若原始代码缺少文档字符串（docstring），调用 LLM 补充完整接口说明，保证需求无歧义。</li>
+</ul>
+</li>
+</ol>
+<p>至此，结合step0筛选得到的 F2P/P2P 测试，一套完整的评测任务主体生成完毕。</p>
+<h3 id="step-5依赖图测试用例联合后置校验post-verification">step 5：依赖图+测试用例联合后置校验（Post Verification）</h3>
+<p>为保证拆分后的代码仓库、任务补丁完全合规，流水线设置<strong>多层强制校验</strong>，校验逻辑同时依赖依赖图节点标记和 F2P/P2P 测试结果，<strong>校验不通过的任务直接丢弃</strong>，不纳入最终数据集。论文中规定了三道校验流程，顺序不可颠倒：</p>
+<h4 id="校验一验证移除功能后的基础代码库">校验一：验证”移除功能后的基础代码库”</h4>
+<p>在删除 Extracted 代码后的仓库中执行测试：</p>
+<ol>
+<li>所有 <strong>F2P 测试必须全部失败</strong>（证明目标功能已彻底移除）；</li>
+<li>所有 <strong>P2P 测试必须全部通过</strong>（证明原有存量功能未被破坏，Remained 节点完整可用）。</li>
+</ol>
+<h4 id="校验二验证基础代码库的依赖完整性">校验二：验证基础代码库的依赖完整性</h4>
+<p>检查基础代码库中，F2P 测试运行所需的所有工具函数、公共依赖是否正常可调用。
+目的：确保仅移除目标功能，没有误删底层依赖，代码环境合法。</p>
+<h4 id="校验三验证标准答案补丁">校验三：验证标准答案补丁</h4>
+<p>将生成的 Gold Patch 重新应用到”缺失功能的基础代码库”中，再次执行全部测试：</p>
+<ol>
+<li>所有 F2P 测试全部通过；</li>
+<li>所有 P2P 测试依旧全部通过。</li>
+</ol>
+<p>三道校验全部通过，才判定该任务合法，纳入 FeatureBench 数据集；任意一项不通过则直接舍弃该样本。</p>
+<h2 id="四数据集信息">四、数据集信息</h2>
+<p>FeatureBench基于<strong>24个主流Python开源仓库</strong>构建，涵盖机器学习、科学计算、可视化、Web框架、工程工具等领域，总计：</p>
+<ul>
+<li>200个高质量评测任务（Full Set）；</li>
+<li>额外抽取30个任务作为Lite Set（降低评测算力成本，便于快速测试）；</li>
+<li>3825个可独立运行的Docker执行环境，保证环境隔离、结果可复现。</li>
+</ul>
+<p>涉及的热门仓库包括 <code>transformers</code>、<code>pandas</code>、<code>pytorch-lightning</code>、<code>scikit-learn</code>、<code>mlflow</code> 等工业界高频库，仓库任务分布如下图：</p>
+<p><img alt="FeatureBench仓库任务分布" loading="lazy" decoding="async"  width="1540" height="1372" src="/blog/pr-preview/pr-29/272476e/_astro/repo-distribution.DaZOM3ms_6eQoI.webp" ></p>
+<p>从数据集的特征来看，FeatureBench 的任务描述相比于SWE-bench更长、需要编写的代码量是SWE-bench20倍以上、涉及十余个文件和近30个函数。Bench对于模型在<strong>长上下文理解、跨文件依赖管理、大规模代码组织</strong>的能力要求极高。</p>
+<p><img alt="FeatureBench与SWE-bench任务规模对比" loading="lazy" decoding="async"  width="960" height="550" src="/blog/pr-preview/pr-29/272476e/_astro/scale-comparison.B-S6wXBY_Z2slzYB.webp" ></p>
+<h2 id="五核心实验结果模型短板暴露明显顶尖模型表现不佳">五、核心实验结果：模型短板暴露明显，顶尖模型表现不佳</h2>
+<h3 id="结论1swe-bench高分--功能开发能力强">结论1：SWE-bench高分 ≠ 功能开发能力强</h3>
+<p>选取两个基准共用仓库子集做公平对比，结果显示：</p>
+<ul>
+<li>在SWE-bench上取得70%+高分的顶尖模型，到了FeatureBench的功能开发场景得分显著下降（不超过50%），即使Claude Opus 4.5模型也仅能解决5.2%的任务。</li>
+<li><strong>现有基准的高分，不足以衡量模型在真实功能开发中的能力。</strong></li>
+</ul>
+<p><img alt="SWE-bench与FeatureBench跨基准对比" loading="lazy" decoding="async"  width="960" height="283" src="/blog/pr-preview/pr-29/272476e/_astro/cross-benchmark.7drac6J0_MYEvx.webp" ></p>
+<h3 id="结论2真实的功能开发场景下现有agent普遍低可靠低效率">结论2：真实的功能开发场景下，现有Agent普遍”低可靠、低效率”</h3>
+<ul>
+<li><strong>可靠性低</strong>：所有模型平均通过率普遍低于50%，且P2P回归测试失败率高。结果表明由模型生成大部分代码能跑通部分测试，却无法完整实现功能。本质是模型在跨文件协同方面能力薄弱，且常破坏存量逻辑。</li>
+<li><strong>效率低</strong>：单任务输入输出Token总量可达数百万，但题目解决率却不高，说明大量算力浪费在无效的代码探索和调试上，离真实开发场景中“高鲁棒性，低成本”的标准仍有一段距离。</li>
+<li><strong>架构能力欠缺</strong>：脱离现有代码上下文、从零独立设计实现（L2任务），所有模型表现趋于一致的低迷，顶尖模型解决率也仅5%~9%——<strong>“无中生有”式的自主架构设计是当前模型的共同瓶颈。</strong></li>
+</ul>
+<p><img alt="FeatureBench主实验结果" loading="lazy" decoding="async"  width="960" height="757" src="/blog/pr-preview/pr-29/272476e/_astro/main-results.Cu7WAD6n_ZQnnf1.webp" ></p>
+<h3 id="结论3失败根源高度集中70的报错来自跨文件引用和接口信息臆测">结论3：失败根源高度集中——70%的报错来自跨文件引用和接口信息臆测</h3>
+<p>团队对Claude Opus 4.5的失败案例做了归类，找到了当前AI编码代理的三大核心短板：</p>
+<ol>
+<li><strong>跨文件依赖解析能力不足</strong>：占比最高的报错是<code>NameError</code>。功能横跨多文件时，模型只会修改局部代码，无法维护跨文件引用关系；</li>
+<li><strong>惰性臆测，不愿主动检索代码</strong>：模型习惯猜测跨文件的接口、属性，而不是主动读取文件核对。这种惰性行为引发了大量<code>TypeError</code>、<code>AttributeError</code>；</li>
+<li><strong>逻辑细节缺失</strong>：大量代码能正常运行到断言环节，但逻辑不符合需求（<code>AssertionError</code>），说明模型在理解与解析核心业务的逻辑中存在疏漏。</li>
+</ol>
+<p><img alt="Claude Opus 4.5失败案例错误分类" loading="lazy" decoding="async"  width="960" height="706" src="/blog/pr-preview/pr-29/272476e/_astro/error-analysis.BmoAmHml_1zfPIx.webp" ></p>
+<h3 id="结论4给接口给测试用例比增加执行步数更管用">结论4：给接口、给测试用例比增加执行步数更管用</h3>
+<ol>
+<li><strong>明确接口的重要性</strong>：移除任务中的函数接口、签名描述后，所有模型解决率大幅下降，证明<strong>标准化接口是AI完成复杂功能开发的必要前提</strong>；</li>
+<li><strong>可见单元测试的增益</strong>：让模型直接看到完整测试用例后，通过率和解决率大幅提升，说明<strong>高质量测试用例可以显著引导AI代码生成</strong>；</li>
+<li><strong>执行步数提升具有边际效应</strong>：将代理最大执行步数从50提升至100，模型性能明显提升；但继续增加到500，提升微乎其微。说明<strong>单纯拉长执行流程对于模型的能力上限突破效果有限</strong>。</li>
+</ol>
+<p><img alt="消融实验结果" loading="lazy" decoding="async"  width="960" height="214" src="/blog/pr-preview/pr-29/272476e/_astro/ablation.ChiduPWN_2iE1dX.webp" ></p>
+<h2 id="六写在最后">六、写在最后</h2>
+<p>FeatureBench面向企业真实开发场景构建任务，将复杂功能开发流程标准化，搭建自动化数据采集流水线，以低成本实现数据集动态持续更新，这套工程化思路具备很高的学习与参考价值。</p>
+<p>跳出论文本身，该工作也折射出三点关键行业认知：</p>
+<p>第一，当前 AI 代码智能体的核心短板不在于代码续写流畅度，而是跨文件依赖梳理、主动代码检索、超长上下文逻辑把控与系统架构设计四大核心工程能力；</p>
+<p>第二，SWE-bench 跑分无法等同于真实工程能力，模型选型不能单纯以榜单分数为唯一评判标准。为了探知到模型的真实表现，针对性的建设更加贴近使用场景的评测架构十分必要；</p>
+<p>第三，落地层面，AI 编码工具更适合充当增量迭代、局部代码优化的开发副驾驶；完全依靠 AI 从零搭建复杂功能尚不具备可行性，人工主导、AI 辅助仍是现阶段最优落地模式。</p>
+<p>最后，论文的消融实验也给了我们一个有效的实践方向：实际开发中不妨尽可能的给模型提供明确的接口与函数定义，甚至可以尝试基于需求预先生成测试用例，一并作为环境信息输入。将模型不擅长的部分从它的任务负载中剥离出来，用人类确定性信息做前置补充———相信这样可以有效模型，能有效引导代码生成方向，功能可用性也会显著提升。</p>
+<hr>
+<h2 id="相关资料">相关资料</h2>
+<ul>
+<li>论文地址：<a href="https://arxiv.org/abs/2602.10975">arXiv:2602.10975</a></li>
+<li>GitHub：<a href="https://github.com/LiberCoders/FeatureBench">https://github.com/LiberCoders/FeatureBench</a></li>
+</ul>  </div> <div class="image-lightbox" data-image-lightbox data-open-label="查看大图" role="dialog" aria-modal="true" aria-label="图片预览" hidden> <button class="image-lightbox__close" type="button" data-lightbox-close aria-label="关闭" title="关闭"> <span aria-hidden="true">×</span> </button> <div class="image-lightbox__stage" data-lightbox-stage> <div class="image-lightbox__frame" data-lightbox-frame> <img data-lightbox-image alt=""> </div> </div> <div class="image-lightbox__controls" data-lightbox-controls> <button type="button" data-lightbox-zoom-out aria-label="缩小" title="缩小"> <span aria-hidden="true">−</span> </button> <span data-lightbox-zoom-value>100%</span> <button type="button" data-lightbox-zoom-in aria-label="放大" title="放大"> <span aria-hidden="true">+</span> </button> </div> <p class="image-lightbox__caption" data-lightbox-caption hidden></p> </div> <script>
+	(() => {
+		const article = document.querySelector('.article-body');
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const preview = lightbox?.querySelector('[data-lightbox-image]');
+		const caption = lightbox?.querySelector('[data-lightbox-caption]');
+		const closeButton = lightbox?.querySelector('[data-lightbox-close]');
+		const stage = lightbox?.querySelector('[data-lightbox-stage]');
+		const frame = lightbox?.querySelector('[data-lightbox-frame]');
+		const zoomInButton = lightbox?.querySelector('[data-lightbox-zoom-in]');
+		const zoomOutButton = lightbox?.querySelector('[data-lightbox-zoom-out]');
+		const zoomValue = lightbox?.querySelector('[data-lightbox-zoom-value]');
+		if (
+			!article ||
+			!lightbox ||
+			!preview ||
+			!caption ||
+			!closeButton ||
+			!stage ||
+			!frame ||
+			!zoomInButton ||
+			!zoomOutButton ||
+			!zoomValue
+		)
+			return;
+
+		let activeTrigger = null;
+		let basePreviewWidth = 0;
+		let basePreviewHeight = 0;
+		let previewScale = 1;
+		let gestureStartScale = 1;
+		const openLabel = lightbox.dataset.openLabel || 'View larger image';
+		const minScale = 1;
+		const maxScale = 2;
+		const scaleStep = 0.25;
+
+		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+		const rememberBaseSize = () => {
+			const rect = preview.getBoundingClientRect();
+			if (!preview.naturalWidth || rect.width < 24 || rect.height < 24) return;
+			basePreviewWidth = rect.width / previewScale;
+			basePreviewHeight = rect.height / previewScale;
+		};
+
+		const updateZoomControls = () => {
+			zoomValue.textContent = `${Math.round(previewScale * 100)}%`;
+			zoomOutButton.disabled = !basePreviewWidth || previewScale <= minScale;
+			zoomInButton.disabled = !basePreviewWidth || previewScale >= maxScale;
+
+			if (previewScale <= minScale || !basePreviewWidth) {
+				frame.style.removeProperty('--lightbox-frame-width');
+				frame.style.removeProperty('--lightbox-frame-height');
+				preview.style.removeProperty('--lightbox-image-scale');
+				delete lightbox.dataset.zoomed;
+				return;
+			}
+
+			frame.style.setProperty('--lightbox-frame-width', `${Math.round(basePreviewWidth * previewScale)}px`);
+			frame.style.setProperty('--lightbox-frame-height', `${Math.round(basePreviewHeight * previewScale)}px`);
+			preview.style.setProperty('--lightbox-image-scale', String(previewScale));
+			lightbox.dataset.zoomed = 'true';
+		};
+
+		const setPreviewScale = (nextScale) => {
+			if (lightbox.hidden) return;
+			if (!basePreviewWidth) rememberBaseSize();
+			if (!basePreviewWidth) return;
+
+			const scale = clamp(Math.round(nextScale * 100) / 100, minScale, maxScale);
+			if (Math.abs(scale - previewScale) < 0.01) return;
+			const scrollXRatio =
+				stage.scrollWidth > stage.clientWidth ? (stage.scrollLeft + stage.clientWidth / 2) / stage.scrollWidth : 0.5;
+			const scrollYRatio =
+				stage.scrollHeight > stage.clientHeight ? (stage.scrollTop + stage.clientHeight / 2) / stage.scrollHeight : 0.5;
+
+			previewScale = scale;
+			updateZoomControls();
+			window.requestAnimationFrame(() => {
+				if (previewScale <= minScale) {
+					stage.scrollLeft = 0;
+					stage.scrollTop = 0;
+					return;
+				}
+				stage.scrollLeft = scrollXRatio * stage.scrollWidth - stage.clientWidth / 2;
+				stage.scrollTop = scrollYRatio * stage.scrollHeight - stage.clientHeight / 2;
+			});
+		};
+
+		const resetPreviewZoom = () => {
+			basePreviewWidth = 0;
+			basePreviewHeight = 0;
+			previewScale = 1;
+			stage.scrollLeft = 0;
+			stage.scrollTop = 0;
+			updateZoomControls();
+		};
+
+		const closeLightbox = () => {
+			if (lightbox.hidden) return;
+			lightbox.hidden = true;
+			preview.removeAttribute('src');
+			delete lightbox.dataset.imageShape;
+			resetPreviewZoom();
+			document.documentElement.classList.remove('has-image-lightbox');
+			activeTrigger?.focus({ preventScroll: true });
+			activeTrigger = null;
+		};
+
+		const openLightbox = (image) => {
+			activeTrigger = image;
+			resetPreviewZoom();
+			preview.src = image.currentSrc || image.src;
+			preview.alt = image.alt || '';
+			const naturalWidth = image.naturalWidth || 0;
+			const naturalHeight = image.naturalHeight || 0;
+			lightbox.dataset.imageShape = naturalHeight > naturalWidth * 1.25 ? 'tall' : 'fit';
+			const captionText = image.alt?.trim() || image.title?.trim() || '';
+			caption.textContent = captionText;
+			caption.hidden = !captionText;
+			lightbox.hidden = false;
+			document.documentElement.classList.add('has-image-lightbox');
+			const primePreviewSize = () => {
+				window.requestAnimationFrame(() => {
+					rememberBaseSize();
+					updateZoomControls();
+				});
+			};
+			if (preview.complete && preview.naturalWidth) primePreviewSize();
+			else preview.addEventListener('load', primePreviewSize, { once: true });
+			closeButton.focus({ preventScroll: true });
+		};
+
+		for (const image of article.querySelectorAll('img')) {
+			if (image.closest('a')) continue;
+
+			const labelText = image.alt?.trim() || image.title?.trim();
+			image.dataset.lightboxTrigger = '';
+			image.setAttribute('role', 'button');
+			image.setAttribute('aria-label', labelText ? `${openLabel}: ${labelText}` : openLabel);
+			if (!image.hasAttribute('tabindex')) image.tabIndex = 0;
+
+			image.addEventListener('click', () => openLightbox(image));
+			image.addEventListener('keydown', (event) => {
+				if (event.key !== 'Enter' && event.key !== ' ') return;
+				event.preventDefault();
+				openLightbox(image);
+			});
+		}
+
+		closeButton.addEventListener('click', closeLightbox);
+		zoomInButton.addEventListener('click', () => setPreviewScale(previewScale + scaleStep));
+		zoomOutButton.addEventListener('click', () => setPreviewScale(previewScale - scaleStep));
+		stage.addEventListener(
+			'wheel',
+			(event) => {
+				if (lightbox.hidden || !(event.ctrlKey || event.metaKey)) return;
+				event.preventDefault();
+				setPreviewScale(previewScale * Math.exp(-event.deltaY * 0.006));
+			},
+			{ passive: false },
+		);
+		stage.addEventListener('gesturestart', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			gestureStartScale = previewScale;
+		});
+		stage.addEventListener('gesturechange', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			setPreviewScale(gestureStartScale * event.scale);
+		});
+		lightbox.addEventListener('click', (event) => {
+			if (event.target === lightbox || event.target === stage) closeLightbox();
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') closeLightbox();
+			if (!lightbox.hidden && (event.key === '+' || event.key === '=')) {
+				event.preventDefault();
+				setPreviewScale(previewScale + scaleStep);
+			}
+			if (!lightbox.hidden && (event.key === '-' || event.key === '_')) {
+				event.preventDefault();
+				setPreviewScale(previewScale - scaleStep);
+			}
+			if (!lightbox.hidden && event.key === '0') {
+				event.preventDefault();
+				setPreviewScale(1);
+			}
+			if (event.key === 'Tab' && !lightbox.hidden) {
+				event.preventDefault();
+				const focusable = [closeButton, zoomOutButton, zoomInButton].filter((item) => !item.disabled);
+				const currentIndex = focusable.indexOf(document.activeElement);
+				const nextIndex =
+					event.shiftKey ?
+						(currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+					:	(currentIndex + 1) % focusable.length;
+				focusable[nextIndex]?.focus({ preventScroll: true });
+			}
+		});
+	})();
+</script>  <script type="module">
+			(async () => {
+				const diagrams = Array.from(document.querySelectorAll('.article-body .mermaid'));
+				if (!diagrams.length) return;
+
+				const { default: mermaid } = await import('https://cdn.jsdelivr.net/npm/mermaid@10.9.6/dist/mermaid.esm.min.mjs');
+				mermaid.initialize({
+					startOnLoad: false,
+					theme: 'default',
+					securityLevel: 'loose',
+					flowchart: { curve: 'basis', htmlLabels: true },
+				});
+				await mermaid.run({ nodes: diagrams });
+			})().catch((error) => console.error('[mermaid]', error));
+		</script> </article>  </main> <footer class="site-footer"> <div> <span>Lens Frontier</span> <span>Reading notes and modest benchmark arguments.</span> </div> <nav class="footer-links" aria-label="Secondary navigation"> <a href="/blog/pr-preview/pr-29/272476e/zh/timeline/">Timeline</a> <a href="/blog/pr-preview/pr-29/272476e/zh/about/">About</a> <a href="/blog/pr-preview/pr-29/272476e/zh/rss.xml">RSS</a> <a href="https://github.com/Lens-Frontier/blog" target="_blank" rel="noreferrer">GitHub</a> </nav> </footer> </div> <script>(function(){const lang = "zh";
+
+	(() => {
+		const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+		const scrollMilestones = [25, 50, 75, 90, 100];
+
+		const article = document.querySelector('[data-analytics-page="article"]');
+		const articleParams =
+			article ?
+				{
+					content_type: article.dataset.analyticsCollection,
+					item_id: article.dataset.analyticsArticleId,
+					language: article.dataset.analyticsLang || lang,
+				}
+			:	{ language: lang };
+
+		const sendEvent = (name, params = {}) => {
+			if (doNotTrack || typeof window.gtag !== 'function') return;
+			window.gtag('event', name, {
+				...articleParams,
+				...params,
+			});
+		};
+
+		const pageKind = () => {
+			if (article) return 'article';
+			const segments = window.location.pathname.split('/').filter(Boolean);
+			const contentSegments = segments[0] === 'blog' ? segments.slice(1) : segments;
+			if (contentSegments[0] === 'zh' || contentSegments[0] === 'en') contentSegments.shift();
+			return contentSegments[0] || 'home';
+		};
+
+		const linkPath = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? url.pathname : undefined;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const linkDomain = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? undefined : url.hostname;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const classifyLink = (link) => {
+			if (link.closest('.brand')) return { event: 'lf_navigation_click', type: 'brand' };
+			if (link.closest('.nav')) return { event: 'lf_navigation_click', type: 'primary_nav' };
+			if (link.closest('.lang-switch')) return { event: 'lf_language_switch', type: 'language_switch' };
+			if (link.closest('.footer-links')) return { event: 'lf_navigation_click', type: 'footer_nav' };
+			if (link.closest('.channel-list')) return { event: 'lf_content_discovery', type: 'home_channel' };
+			if (link.closest('.entry-row') && link.matches('.entry-title')) return { event: 'lf_content_discovery', type: 'entry_title' };
+			if (link.closest('.tag-cloud')) return { event: 'lf_tag_click', type: 'tag_cloud' };
+			if (link.closest('.tag-list')) return { event: 'lf_tag_click', type: 'tag_list' };
+			if (link.closest('.article-actions')) return { event: 'lf_article_resource_click', type: 'article_resource' };
+			if (link.closest('.authors')) return { event: 'lf_author_profile_click', type: 'author_profile' };
+			if (link.closest('.article-body')) return { event: 'lf_article_body_link_click', type: 'article_body_link' };
+			return linkDomain(link.href) ? { event: 'lf_outbound_click', type: 'outbound' } : { event: 'lf_internal_click', type: 'internal' };
+		};
+
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const zoomValue = document.querySelector('[data-lightbox-zoom-value]');
+		let imageLightboxOpen = false;
+
+		const recordImageOpen = (imageTrigger) => {
+			const images = [...document.querySelectorAll('.article-body img[data-lightbox-trigger]')];
+			imageLightboxOpen = true;
+			sendEvent('lf_article_image_open', {
+				image_index: images.indexOf(imageTrigger) + 1,
+				image_count: images.length,
+			});
+		};
+
+		const recordImageZoom = (direction) => {
+			window.setTimeout(() => {
+				sendEvent('lf_article_image_zoom', {
+					zoom_direction: direction,
+					zoom_value: zoomValue?.textContent,
+				});
+			}, 0);
+		};
+
+		if (lightbox && typeof MutationObserver !== 'undefined') {
+			new MutationObserver(() => {
+				if (!imageLightboxOpen || !lightbox.hidden) return;
+				imageLightboxOpen = false;
+				sendEvent('lf_article_image_close');
+			}).observe(lightbox, { attributes: true, attributeFilter: ['hidden'] });
+		}
+
+		document.addEventListener('click', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.closest('.article-body img[data-lightbox-trigger]');
+			if (imageTrigger) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			const zoomIn = target.closest('[data-lightbox-zoom-in]');
+			const zoomOut = target.closest('[data-lightbox-zoom-out]');
+			if (zoomIn || zoomOut) {
+				recordImageZoom(zoomIn ? 'in' : 'out');
+				return;
+			}
+
+			const link = target.closest('a[href]');
+			if (!link) return;
+
+			const classification = classifyLink(link);
+			sendEvent(classification.event, {
+				link_type: classification.type,
+				link_path: linkPath(link.href),
+				link_domain: linkDomain(link.href),
+				page_kind: pageKind(),
+			});
+		});
+
+		document.addEventListener('keydown', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.matches('.article-body img[data-lightbox-trigger]') ? target : null;
+			if (imageTrigger && (event.key === 'Enter' || event.key === ' ')) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			if (!imageLightboxOpen) return;
+			if (event.key === '+' || event.key === '=') recordImageZoom('in');
+			if (event.key === '-' || event.key === '_') recordImageZoom('out');
+			if (event.key === '0') recordImageZoom('reset');
+		});
+
+		document.addEventListener(
+			'wheel',
+			(event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				if (!imageLightboxOpen || !target?.closest('[data-lightbox-stage]') || !(event.ctrlKey || event.metaKey)) return;
+				recordImageZoom(event.deltaY < 0 ? 'in' : 'out');
+			},
+			{ passive: true },
+		);
+
+		if (!article) return;
+
+		let maxDepth = 0;
+		let activeSeconds = 0;
+		const sentScrollMilestones = new Set();
+		let sentEngagedRead = false;
+		let scrollTickScheduled = false;
+
+		const scrollDepth = () => {
+			const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollable <= 0) return 100;
+			return Math.min(100, Math.max(0, Math.round((window.scrollY / scrollable) * 100)));
+		};
+
+		const maybeSendReadingEvents = () => {
+			maxDepth = Math.max(maxDepth, scrollDepth());
+			for (const milestone of scrollMilestones) {
+				if (maxDepth < milestone || sentScrollMilestones.has(milestone)) continue;
+				sentScrollMilestones.add(milestone);
+				sendEvent('lf_article_scroll_depth', {
+					scroll_depth: milestone,
+					active_seconds: activeSeconds,
+				});
+			}
+
+			if (!sentEngagedRead && activeSeconds >= 45 && maxDepth >= 50) {
+				sentEngagedRead = true;
+				sendEvent('lf_article_engaged_read', {
+					scroll_depth: maxDepth,
+					active_seconds: activeSeconds,
+				});
+			}
+		};
+
+		const tick = () => {
+			if (document.visibilityState === 'visible') activeSeconds += 1;
+			maybeSendReadingEvents();
+		};
+
+		const scheduleScrollRead = () => {
+			if (scrollTickScheduled) return;
+			scrollTickScheduled = true;
+			window.requestAnimationFrame(() => {
+				scrollTickScheduled = false;
+				maybeSendReadingEvents();
+			});
+		};
+
+		window.addEventListener('scroll', scheduleScrollRead, { passive: true });
+		document.addEventListener('visibilitychange', maybeSendReadingEvents);
+		window.setInterval(tick, 1000);
+		maybeSendReadingEvents();
+	})();
+})();</script> </body></html>
