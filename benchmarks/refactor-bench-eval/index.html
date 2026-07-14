@@ -1,0 +1,35 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>一个客观的代码重构评估体系是如何构成的 - Lens Frontier</title><meta name="description" content="以行为保持和结构静态检查为核心，用真实开源代码提交做数据、隔离环境测试、用 tree-sitter 做语法树匹配，避开大模型当裁判带来的主观漂移，精准测量大模型的代码重构能力边界。"><script>(function(){const measurementId = "G-ZK42116ZXB";
+
+			(() => {
+				const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+				window.dataLayer = window.dataLayer || [];
+				window.gtag =
+					window.gtag ||
+					function gtag() {
+						window.dataLayer.push(arguments);
+					};
+				if (doNotTrack) return;
+				window.gtag('js', new Date());
+				window.gtag('config', measurementId);
+
+				const loadAnalytics = () => {
+					if (document.querySelector('script[data-lens-frontier-ga]')) return;
+					const script = document.createElement('script');
+					script.async = true;
+					script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+					script.dataset.lensFrontierGa = 'true';
+					document.head.append(script);
+				};
+
+				const scheduleAnalytics = () => {
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(loadAnalytics, { timeout: 2500 });
+						return;
+					}
+					window.setTimeout(loadAnalytics, 1200);
+				};
+
+				if (document.readyState === 'complete') scheduleAnalytics();
+				else window.addEventListener('load', scheduleAnalytics, { once: true });
+			})();
+		})();</script><meta http-equiv="refresh" content="0; url=/blog/zh/benchmarks/refactor-bench-eval/"><link rel="canonical" href="https://lens-frontier.github.io/blog/zh/benchmarks/refactor-bench-eval/"></head> <body> <a href="/blog/zh/benchmarks/refactor-bench-eval/">Continue to Lens Frontier</a> </body></html>
