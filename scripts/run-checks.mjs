@@ -57,6 +57,7 @@ function runSyntaxChecks() {
 function runQualityChecks() {
 	runPnpm('Markdown lint', 'check:markdown');
 	runPnpm('Content rules', 'check:content');
+	runPnpm('Benchmark data rules', 'check:bench');
 	runPnpm('Sensitive content scan', 'check:sensitive');
 	runPnpm('Asset hard limits', 'check:assets');
 	runPnpm('Image recommendations', 'images:check');
