@@ -11,7 +11,6 @@ permissions:
   contents: read
 
 env:
-  SITE_URL: https://lens-frontier.github.io
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -51,18 +50,37 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          owner_lower="$(printf '%s' "$owner" | tr '[:upper:]' '[:lower:]')"
+          repo_lower="$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')"
+          site_url="https://${owner_lower}.github.io"
+
+          if [ "$repo_lower" = "${owner_lower}.github.io" ]; then
+            site_base="/"
+            echo "LEGACY_SITE_BASE=/blog/" >> "$GITHUB_ENV"
+          else
+            site_base="/${repo}/"
+          fi
+
+          {
+            echo "SITE_URL=${site_url}"
+            echo "PUBLIC_REPOSITORY_URL=https://github.com/${GITHUB_REPOSITORY}"
+          } >> "$GITHUB_ENV"
+
           if [ "$EVENT_NAME" = "pull_request" ]; then
             short_sha="${PR_HEAD_SHA:0:7}"
+            preview_base="${site_base}pr-preview/pr-${PR_NUMBER}/${short_sha}/"
             {
-              echo "SITE_BASE=/blog/pr-preview/pr-${PR_NUMBER}/${short_sha}/"
+              echo "SITE_BASE=${preview_base}"
               echo "PREVIEW_PR_NUMBER=${PR_NUMBER}"
               echo "PREVIEW_HEAD_SHA=${PR_HEAD_SHA}"
               echo "PREVIEW_SHORT_SHA=${short_sha}"
               echo "PREVIEW_DESTINATION=pr-preview/pr-${PR_NUMBER}/${short_sha}"
-              echo "PREVIEW_URL=https://lens-frontier.github.io/blog/pr-preview/pr-${PR_NUMBER}/${short_sha}/"
+              echo "PREVIEW_URL=${site_url}${preview_base}"
             } >> "$GITHUB_ENV"
           else
-            echo "SITE_BASE=/blog/" >> "$GITHUB_ENV"
+            echo "SITE_BASE=${site_base}" >> "$GITHUB_ENV"
           fi
 
       - name: Install pnpm
@@ -101,3 +119,15 @@ jobs:
           path: dist
           if-no-files-found: error
           retention-days: 7
+
+      - name: Summarize PR preview
+        if: github.event_name == 'pull_request'
+        run: |
+          {
+            echo "## Commit preview"
+            echo ""
+            echo "- PR: #${PREVIEW_PR_NUMBER}"
+            echo "- Commit: \`${PREVIEW_SHORT_SHA}\`"
+            echo "- Isolated URL: ${PREVIEW_URL}"
+            echo "- Production is unchanged; formal deployment is a separate manual workflow."
+          } >> "$GITHUB_STEP_SUMMARY"

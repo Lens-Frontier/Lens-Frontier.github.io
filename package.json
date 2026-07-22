@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "clean:astro": "rm -rf .astro node_modules/.astro dist",
-    "build": "astro build",
+    "build": "astro build && node scripts/write-legacy-base-redirects.mjs",
     "check:markdown": "markdownlint-cli2",
     "check:content": "node scripts/check-content.mjs",
     "check:bench": "tsx scripts/check-benchmark-data.ts",

@@ -1,9 +1,18 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Git branch, tag, or commit SHA to deploy
+        required: true
+        default: main
+        type: string
+      confirm_production:
+        description: Confirm that this ref should replace the production site
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -13,13 +22,15 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  SITE_URL: https://lens-frontier.github.io
-  SITE_BASE: /blog/
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build-and-deploy:
+    if: ${{ inputs.confirm_production }}
     runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ github.event.repository.name == format('{0}.github.io', github.repository_owner) && format('https://{0}.github.io/', github.repository_owner) || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
     env:
       PUBLIC_GA_MEASUREMENT_ID: G-ZK42116ZXB
       PUBLIC_PAGEVIEW_ENDPOINT: ${{ secrets.PUBLIC_PAGEVIEW_ENDPOINT }}
@@ -28,6 +39,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Resolve deployment target
+        run: |
+          owner="${GITHUB_REPOSITORY%%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          owner_lower="$(printf '%s' "$owner" | tr '[:upper:]' '[:lower:]')"
+          repo_lower="$(printf '%s' "$repo" | tr '[:upper:]' '[:lower:]')"
+
+          if [ "$repo_lower" = "${owner_lower}.github.io" ]; then
+            site_base="/"
+            echo "LEGACY_SITE_BASE=/blog/" >> "$GITHUB_ENV"
+          else
+            site_base="/${repo}/"
+          fi
+
+          {
+            echo "SITE_URL=https://${owner_lower}.github.io"
+            echo "SITE_BASE=${site_base}"
+            echo "PUBLIC_REPOSITORY_URL=https://github.com/${GITHUB_REPOSITORY}"
+          } >> "$GITHUB_ENV"
+
+      - name: Record deployment target
+        run: |
+          resolved_sha="$(git rev-parse HEAD)"
+          {
+            echo "## Production deployment"
+            echo ""
+            echo "- Requested ref: \`${{ inputs.ref }}\`"
+            echo "- Resolved commit: \`${resolved_sha}\`"
+            echo "- Site base: \`${SITE_BASE}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Install pnpm
         uses: pnpm/action-setup@v6
