@@ -101,7 +101,7 @@ tags: ["benchmark"]
 - Critic 不只是判对错，还要把求解轨迹转成通过率、决策和下一轮改写建议。
 
 流程图：
-![Hardener-Solver-Critic 多智能体难度增强流程图](../../assets/posts/opinions/browsecomp-query-hardening/image.png)
+![Hardener-Solver-Critic 多智能体难度增强流程图](../../assets/posts/opinions/browsecomp-query-hardening/image.webp)
 
 | 模块 | 输入 | 输出 | 真正负责的事 |
 | --- | --- | --- | --- |
