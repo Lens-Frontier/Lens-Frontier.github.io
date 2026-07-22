@@ -1,0 +1,424 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+	categoryLabels,
+	evidenceLabels,
+	leaderboardAssets,
+	statusLabels,
+	benchmarkCatalog,
+} from '../../lib/benchmarkData';
+import { publishedEntries } from '../../lib/content';
+import { entryPath, formatDate, languageFrom, languages, localizedPath, ui } from '../../lib/site';
+
+export function getStaticPaths() {
+	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+const lang = languageFrom(Astro.props.lang);
+const boards = leaderboardAssets(lang);
+const catalog = benchmarkCatalog(lang);
+const boardIds = new Set(boards.map((asset) => asset.id));
+const cards = [
+	...boards,
+	...catalog.filter((asset) => !boardIds.has(asset.id)),
+].slice(0, 10);
+const latest = (await publishedEntries(lang)).slice(0, 4);
+const labels = ui[lang];
+const collectionLabels = labels.collectionLabels;
+const evidence = evidenceLabels(lang);
+const statuses = statusLabels(lang);
+const categories = categoryLabels(lang);
+
+const copy =
+	lang === 'zh'
+		? {
+				metaTitle: 'Lens Frontier - AI 评测数据平台',
+				metaDescription:
+					'Lens Frontier 以 benchmark 榜单展示模型表现，并用 Data Card 解释数据集、协议和证据。',
+				title: '榜单先行，证据随后。',
+				intro: '先比较模型在每个 benchmark 下的表现，再打开 Data Card 查看任务范围、评测协议和证据记录。',
+				primary: '查看榜单',
+				secondary: '浏览 Data Cards',
+				benchmarks: 'Benchmark',
+				dataCards: 'Data Cards',
+				topScore: '最高分',
+				leaderboard: '模型表现榜单',
+				selectBenchmark: '选择 benchmark',
+				viewBenchmark: '查看 benchmark',
+				viewFull: '查看完整榜单',
+				rank: '排名',
+				model: '模型',
+				score: '分数',
+				evidence: '证据',
+				delta: '差距',
+				lead: '领先',
+				labNote: 'Lab Note',
+				openCard: '展开 Data Card',
+				category: '领域',
+				capability: '能力',
+				source: '来源',
+				judge: 'Judge',
+				status: '状态',
+				cardIntro: '每张 Data Card 对应一个 benchmark，保留来源、能力边界、judge 方式和建设状态。',
+				cardDetail: '数据集摘要',
+				viewAllCards: '查看全部 Data Cards',
+				preparing: '筹备中',
+					active: '已上榜',
+					leaderboardEmptyTitle: '榜单待发布',
+					leaderboardEmptyBody: '只有通过发布检查的真实模型结果才会出现在这里。',
+				blog: 'Blog',
+				blogIntro: '方法论、数据集更新和评测观察都收回到博客。',
+				viewPosts: '查看全部文章',
+				emptyTitle: labels.pages.blog.emptyTitle,
+				emptyBody: labels.pages.blog.emptyBody,
+			}
+		: {
+				metaTitle: 'Lens Frontier - AI Evaluation Data Platform',
+				metaDescription:
+					'Lens Frontier presents benchmark leaderboards first, then opens each score through Data Cards for datasets, protocol, and evidence.',
+				title: 'Leaderboard first. Evidence next.',
+				intro: 'Compare model performance inside each benchmark, then open the Data Card for scope, protocol, and evidence records.',
+				primary: 'View leaderboard',
+				secondary: 'Browse Data Cards',
+				benchmarks: 'Benchmarks',
+				dataCards: 'Data Cards',
+				topScore: 'Top score',
+				leaderboard: 'Model leaderboard',
+				selectBenchmark: 'Select benchmark',
+				viewBenchmark: 'View benchmark',
+				viewFull: 'View full leaderboard',
+				rank: 'Rank',
+				model: 'Model',
+				score: 'Score',
+				evidence: 'Evidence',
+				delta: 'Gap',
+				lead: 'Lead',
+				labNote: 'Lab Note',
+				openCard: 'Open Data Card',
+				category: 'Domain',
+				capability: 'Capability',
+				source: 'Source',
+				judge: 'Judge',
+				status: 'Status',
+				cardIntro:
+					'Each Data Card maps one benchmark to its source, capability boundary, judge mode, and build status.',
+				cardDetail: 'Dataset brief',
+				viewAllCards: 'View all Data Cards',
+				preparing: 'Preparing',
+					active: 'On leaderboard',
+					leaderboardEmptyTitle: 'Leaderboard pending',
+					leaderboardEmptyBody: 'Only measured model results that pass the release checks appear here.',
+				blog: 'Blog',
+				blogIntro: 'Methods, dataset updates, and evaluation observations collected in the blog.',
+				viewPosts: 'View all posts',
+				emptyTitle: labels.pages.blog.emptyTitle,
+				emptyBody: labels.pages.blog.emptyBody,
+			};
+
+const benchmarksPath = localizedPath(lang, '/benchmarks/');
+const blogPath = localizedPath(lang, '/blog/');
+const topScore = boards.length ? Math.max(...boards.flatMap((asset) => asset.leaders.map((leader) => leader.score))) : null;
+
+const gapFromTop = (score: number, best: number) => {
+	const gap = best - score;
+	return gap < 0.05 ? copy.lead : `-${gap.toFixed(1)}`;
+};
+---
+
+<BaseLayout lang={lang} alternatePath="/lab-v1/" title={copy.metaTitle} description={copy.metaDescription}>
+	<div class="lf-lab-platform">
+		<section id="leaderboard" class="lf-lab-hero" aria-label={copy.leaderboard}>
+			<div class="lf-lab-copy">
+				<h1>
+					{lang === 'zh' ? (
+						<>
+							榜单先行，<br />证据随后。
+						</>
+					) : (
+						copy.title
+					)}
+				</h1>
+				<p>{copy.intro}</p>
+				<div class="lf-lab-actions">
+					<a class="lf-lab-button lf-lab-button--primary" href="#leaderboard">
+						{copy.primary}<span aria-hidden="true">→</span>
+					</a>
+					<a class="lf-lab-button" href="#data-cards">{copy.secondary}</a>
+				</div>
+				<dl class="lf-lab-metrics" aria-label="Lens Frontier metrics">
+					<div>
+						<dt>{copy.benchmarks}</dt>
+						<dd>{boards.length}</dd>
+					</div>
+					<div>
+						<dt>{copy.dataCards}</dt>
+						<dd>{catalog.length}</dd>
+					</div>
+					<div>
+						<dt>{copy.topScore}</dt>
+						<dd>{topScore === null ? '—' : topScore.toFixed(1)}</dd>
+					</div>
+				</dl>
+			</div>
+
+			<div class="lf-lab-board">
+				{boards.length ? <>
+				<div class="lf-lab-tabs" role="tablist" aria-label={copy.selectBenchmark}>
+					{boards.map((asset, index) => (
+						<button
+							type="button"
+							role="tab"
+							class:list={['lf-lab-tab', { 'is-active': index === 0 }]}
+							aria-selected={index === 0 ? 'true' : 'false'}
+							aria-controls={`lf-lab-panel-${asset.id}`}
+							data-lab-board={asset.id}
+						>
+							{asset.name}
+						</button>
+					))}
+				</div>
+
+				{boards.map((asset, boardIndex) => {
+					const best = asset.leaders[0]?.score ?? 0;
+					return (
+						<article
+							id={`lf-lab-panel-${asset.id}`}
+							class:list={['lf-lab-panel', { 'is-active': boardIndex === 0 }]}
+							data-lab-panel={asset.id}
+							hidden={boardIndex !== 0}
+						>
+							<header class="lf-lab-panel-head">
+								<div>
+									<h2>{asset.name}</h2>
+									<p>{asset.summary}</p>
+								</div>
+								<a href={benchmarksPath}>{copy.viewBenchmark}<span aria-hidden="true">→</span></a>
+							</header>
+
+							<div class="lf-lab-chart" aria-label={`${asset.name} ${copy.leaderboard}`}>
+								<div class="lf-lab-chart-head">
+									<span>{copy.rank}</span>
+									<span>{copy.model}</span>
+									<span>{copy.score}</span>
+									<span>{copy.evidence}</span>
+									<span>{copy.delta}</span>
+								</div>
+								{asset.leaders.map((leader, leaderIndex) => (
+									<button type="button" class="lf-lab-row">
+										<span>{String(leaderIndex + 1).padStart(2, '0')}</span>
+										<strong>{leader.model}</strong>
+										<b class="lf-lab-score">
+											<i aria-hidden="true" style={`--score: ${leader.score.toFixed(1)}%`}></i>
+											<small>{leader.score.toFixed(1)}</small>
+										</b>
+										<em>{evidence[leader.evidence]}</em>
+										<small>{gapFromTop(leader.score, best)}</small>
+									</button>
+								))}
+							</div>
+
+							<footer class="lf-lab-panel-foot">
+								<p>{asset.capability}</p>
+								<a href={benchmarksPath}>{copy.viewFull}<span aria-hidden="true">→</span></a>
+							</footer>
+						</article>
+					);
+					})}
+				</> : <div class="lf-lab-empty"><strong>{copy.leaderboardEmptyTitle}</strong><span>{copy.leaderboardEmptyBody}</span></div>}
+			</div>
+
+			{boards.length > 0 && <aside class="lf-lab-note" aria-label={copy.labNote}>
+				{boards.map((asset, index) => (
+					<section
+						class:list={['lf-lab-note-card', { 'is-active': index === 0 }]}
+						data-lab-note={asset.id}
+						hidden={index !== 0}
+					>
+						<div class="lf-lab-note-top">
+							<span>{copy.labNote}</span>
+							<a href="#data-cards" data-lab-open-card={asset.id}>{copy.openCard}</a>
+						</div>
+						<h2>{asset.name}</h2>
+						<p>{asset.summary}</p>
+						<dl>
+							<div>
+								<dt>{copy.category}</dt>
+								<dd>{categories[asset.category]}</dd>
+							</div>
+							<div>
+								<dt>{copy.capability}</dt>
+								<dd>{asset.capability}</dd>
+							</div>
+							<div>
+								<dt>{copy.source}</dt>
+								<dd>{asset.source}</dd>
+							</div>
+							<div>
+								<dt>{copy.judge}</dt>
+								<dd>{asset.judgeMode}</dd>
+							</div>
+							<div>
+								<dt>{copy.status}</dt>
+								<dd>{statuses[asset.status]}</dd>
+							</div>
+						</dl>
+					</section>
+				))}
+			</aside>}
+		</section>
+
+		<section class="lf-lab-lower" aria-label="Lens Frontier index">
+			<div id="data-cards" class="lf-lab-cards">
+				<header class="lf-lab-section-head">
+					<div>
+						<h2>{copy.dataCards}</h2>
+						<p>{copy.cardIntro}</p>
+					</div>
+					<a href={benchmarksPath}>{copy.viewAllCards}<span aria-hidden="true">→</span></a>
+				</header>
+
+				<div class="lf-lab-card-grid">
+					{cards.map((asset, index) => {
+						const best = asset.leaders?.[0]?.score;
+						const hasBoard = Boolean(asset.leaders);
+						return (
+							<article class:list={['lf-lab-card', { 'is-open': index === 0 }]} data-lab-card={asset.id}>
+								<button
+									type="button"
+									aria-expanded={index === 0 ? 'true' : 'false'}
+									aria-controls={`lf-lab-card-${asset.id}`}
+									data-lab-card-toggle={asset.id}
+								>
+									<span>{asset.name}</span>
+									<strong>{best ? best.toFixed(1) : copy.preparing}</strong>
+									<small>{asset.capability}</small>
+									<i>{hasBoard ? copy.active : statuses[asset.status]}</i>
+								</button>
+								<div id={`lf-lab-card-${asset.id}`} class="lf-lab-card-detail" hidden={index !== 0}>
+									<p>{asset.summary}</p>
+									<dl>
+										<div>
+											<dt>{copy.source}</dt>
+											<dd>{asset.source}</dd>
+										</div>
+										<div>
+											<dt>{copy.judge}</dt>
+											<dd>{asset.judgeMode}</dd>
+										</div>
+									</dl>
+									<ul>
+										{asset.tags.map((tag) => <li>{tag}</li>)}
+									</ul>
+								</div>
+							</article>
+						);
+					})}
+				</div>
+			</div>
+
+			<div id="blog" class="lf-lab-blog">
+				<header class="lf-lab-section-head">
+					<div>
+						<h2>{copy.blog}</h2>
+						<p>{copy.blogIntro}</p>
+					</div>
+					<a href={blogPath}>{copy.viewPosts}<span aria-hidden="true">→</span></a>
+				</header>
+
+				{latest.length ? (
+					<div class="lf-lab-posts">
+						{latest.map(({ entry, collection }) => (
+							<a href={entryPath(collection, entry.id, lang)}>
+								<span>{formatDate(entry.data.date, lang)} / {collectionLabels[collection]}</span>
+								<strong>{entry.data.title}</strong>
+								<small aria-hidden="true">→</small>
+							</a>
+						))}
+					</div>
+				) : (
+					<div class="lf-lab-empty">
+						<strong>{copy.emptyTitle}</strong>
+						<span>{copy.emptyBody}</span>
+					</div>
+				)}
+			</div>
+		</section>
+	</div>
+
+	<script is:inline>
+		(() => {
+			const root = document.querySelector('.lf-lab-platform');
+			if (!root) return;
+
+			const boardButtons = Array.from(root.querySelectorAll('[data-lab-board]'));
+			const panels = Array.from(root.querySelectorAll('[data-lab-panel]'));
+			const notes = Array.from(root.querySelectorAll('[data-lab-note]'));
+			const cards = Array.from(root.querySelectorAll('[data-lab-card]'));
+
+			const openCard = (id) => {
+				cards.forEach((card) => {
+					const isOpen = card.getAttribute('data-lab-card') === id;
+					card.classList.toggle('is-open', isOpen);
+					if (isOpen) {
+						card.classList.remove('is-drawn');
+						void card.offsetWidth;
+						card.classList.add('is-drawn');
+					}
+					const toggle = card.querySelector('[data-lab-card-toggle]');
+					const detail = card.querySelector('.lf-lab-card-detail');
+					if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
+					if (detail) detail.hidden = !isOpen;
+				});
+			};
+
+			const activateBoard = (id) => {
+				boardButtons.forEach((button) => {
+					const isActive = button.getAttribute('data-lab-board') === id;
+					button.classList.toggle('is-active', isActive);
+					button.setAttribute('aria-selected', String(isActive));
+				});
+
+				panels.forEach((panel) => {
+					const isActive = panel.getAttribute('data-lab-panel') === id;
+					panel.classList.toggle('is-active', isActive);
+					panel.hidden = !isActive;
+				});
+
+				notes.forEach((note) => {
+					const isActive = note.getAttribute('data-lab-note') === id;
+					note.classList.toggle('is-active', isActive);
+					note.hidden = !isActive;
+				});
+
+				openCard(id);
+			};
+
+			boardButtons.forEach((button) => {
+				button.addEventListener('click', () => {
+					const id = button.getAttribute('data-lab-board');
+					if (id) activateBoard(id);
+				});
+			});
+
+			root.querySelectorAll('[data-lab-card-toggle]').forEach((button) => {
+				button.addEventListener('click', () => {
+					const id = button.getAttribute('data-lab-card-toggle');
+					if (!id) return;
+					const linkedBoard = root.querySelector(`[data-lab-board="${id}"]`);
+					if (linkedBoard) {
+						activateBoard(id);
+					} else {
+						openCard(id);
+					}
+				});
+			});
+
+			root.querySelectorAll('[data-lab-open-card]').forEach((link) => {
+				link.addEventListener('click', () => {
+					const id = link.getAttribute('data-lab-open-card');
+					if (id) openCard(id);
+				});
+			});
+		})();
+	</script>
+</BaseLayout>

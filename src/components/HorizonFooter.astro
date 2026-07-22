@@ -1,0 +1,96 @@
+---
+import { benchmarkCatalog } from '../lib/benchmarkData';
+import { localizedPath, repositoryUrl, type Language } from '../lib/site';
+
+interface Props {
+	lang: Language;
+}
+
+const { lang } = Astro.props;
+const homePath = localizedPath(lang, '/');
+const year = new Date().getFullYear();
+const hasPublishedBenchmarks = benchmarkCatalog(lang).length > 0;
+const copy = lang === 'zh'
+	? {
+			lab: '模型评测数据平台',
+			note: '发布评测研究；榜单与 Data Card 仅在资料审核完成后上线。',
+			groups: [
+				...(hasPublishedBenchmarks
+					? [{ label: '探索', items: [
+						{ label: '榜单', href: `${homePath}#leaderboard` },
+						{ label: 'Benchmarks', href: localizedPath(lang, '/benchmarks/') },
+					] }]
+					: []),
+				{
+					label: '研究',
+					items: [
+						{ label: '博客', href: localizedPath(lang, '/blog/') },
+						{ label: '研究主题', href: localizedPath(lang, '/blog/tags/') },
+						{ label: '时间线', href: localizedPath(lang, '/timeline/') },
+					],
+				},
+				{
+					label: '实验室',
+					items: [
+						{ label: '关于', href: localizedPath(lang, '/about/') },
+					],
+				},
+			],
+		}
+	: {
+			lab: 'Model evaluation data platform',
+			note: 'Publishing evaluation research; leaderboards and Data Cards go live only after review.',
+			groups: [
+				...(hasPublishedBenchmarks
+					? [{ label: 'Explore', items: [
+						{ label: 'Leaderboard', href: `${homePath}#leaderboard` },
+						{ label: 'Benchmarks', href: localizedPath(lang, '/benchmarks/') },
+					] }]
+					: []),
+				{
+					label: 'Research',
+					items: [
+						{ label: 'Blog', href: localizedPath(lang, '/blog/') },
+						{ label: 'Topics', href: localizedPath(lang, '/blog/tags/') },
+						{ label: 'Timeline', href: localizedPath(lang, '/timeline/') },
+					],
+				},
+				{
+					label: 'Lab',
+					items: [
+						{ label: 'About', href: localizedPath(lang, '/about/') },
+					],
+				},
+			],
+		};
+---
+
+<footer class="site-footer site-footer--horizon">
+	<div class="horizon-footer__main">
+		<div class="horizon-footer__brand">
+			<a class="horizon-footer__identity" href={homePath}>
+				<strong>Lens Frontier</strong>
+				<span>{copy.lab}</span>
+			</a>
+			<p>{copy.note}</p>
+		</div>
+
+		<nav class="horizon-footer__nav" aria-label="Footer navigation">
+			{copy.groups.map((group) => (
+				<div class="horizon-footer__nav-group">
+					<span>{group.label}</span>
+					{group.items.map((item) => <a href={item.href}>{item.label}</a>)}
+				</div>
+			))}
+		</nav>
+	</div>
+
+	<div class="horizon-footer__bottom">
+		<span>© {year} Lens Frontier</span>
+		<div>
+			<a href={repositoryUrl} target="_blank" rel="noreferrer">GitHub</a>
+			<a href={localizedPath(lang, '/rss.xml')}>RSS</a>
+		</div>
+		<a href="#top">TOP <span aria-hidden="true">↑</span></a>
+	</div>
+</footer>
