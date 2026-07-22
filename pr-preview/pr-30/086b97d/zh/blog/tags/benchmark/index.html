@@ -1,0 +1,213 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="generator" content="Astro v6.3.3"><title>研究主题：benchmark - Lens Frontier</title><meta name="description" content="3 项研究发布"><meta name="theme-color" content="#f4f6f5" data-theme-color><script>
+			(() => {
+				const stored = localStorage.getItem('lens-frontier-theme');
+				const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const theme = stored === 'light' || stored === 'dark' ? stored : systemDark ? 'dark' : 'light';
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+			})();
+		</script><link rel="canonical" href="https://lens-frontier.github.io/blog/pr-preview/pr-30/086b97d/zh/blog/tags/benchmark/"><link rel="alternate" hreflang="zh-CN" href="/blog/pr-preview/pr-30/086b97d/zh/blog/tags/"><link rel="alternate" hreflang="en" href="/blog/pr-preview/pr-30/086b97d/en/blog/tags/"><link rel="icon" type="image/svg+xml" href="/blog/pr-preview/pr-30/086b97d/favicon.svg"><link rel="stylesheet" href="/blog/pr-preview/pr-30/086b97d/_astro/BaseLayout.BG1T4O_I.css">
+<link rel="stylesheet" href="/blog/pr-preview/pr-30/086b97d/_astro/blog-lab.mo6o0VOX.css"></head> <body id="top"> <div class="shell"> <header class="site-header"> <div class="site-header__inner"> <a class="brand" href="/blog/pr-preview/pr-30/086b97d/zh/"> <span class="brand-mark" aria-hidden="true">LF</span> <span class="brand-wordmark"> <strong>Lens Frontier</strong> <small>评测数据平台</small> </span> </a> <div class="header-actions"> <nav class="nav" aria-label="Primary navigation"> <a href="/blog/pr-preview/pr-30/086b97d/zh/#leaderboard"> <span aria-hidden="true">01</span> 榜单 </a><a href="/blog/pr-preview/pr-30/086b97d/zh/benchmarks/"> <span aria-hidden="true">02</span> Benchmarks </a><a href="/blog/pr-preview/pr-30/086b97d/zh/blog/" aria-current="page"> <span aria-hidden="true">03</span> 博客 </a> </nav> <details class="mobile-nav"> <summary>菜单</summary> <nav aria-label="Mobile navigation"> <a href="/blog/pr-preview/pr-30/086b97d/zh/#leaderboard"> <span aria-hidden="true">01</span> <strong>榜单</strong> </a><a href="/blog/pr-preview/pr-30/086b97d/zh/benchmarks/"> <span aria-hidden="true">02</span> <strong>Benchmarks</strong> </a><a href="/blog/pr-preview/pr-30/086b97d/zh/blog/" aria-current="page"> <span aria-hidden="true">03</span> <strong>博客</strong> </a> </nav> </details> <nav class="lang-switch" aria-label="Language switcher"> <a href="/blog/pr-preview/pr-30/086b97d/zh/blog/tags/" aria-current="true"> 中文 </a><a href="/blog/pr-preview/pr-30/086b97d/en/blog/tags/"> EN </a> </nav> <button type="button" class="theme-toggle" data-theme-toggle data-light-label="切换到浅色模式" data-dark-label="切换到暗色模式" aria-label="切换到暗色模式" title="切换到暗色模式"> <span class="theme-toggle__icon" aria-hidden="true"></span> </button> </div> </div> </header> <main>  <div class="lab-blog lab-blog--topic-detail"> <header class="lab-blog__hero lab-blog__hero--topics"> <div> <a class="lab-blog__back" href="/blog/pr-preview/pr-30/086b97d/zh/blog/">← 返回全部 Blog</a> <span class="lab-blog__kicker">BLOG / TOPIC</span> <h1>#benchmark</h1> </div> <p>3 项研究发布</p> </header> <section class="lab-blog__latest" aria-labelledby="lab-blog-related"> <h2 id="lab-blog-related">相关发布</h2> <div> <a href="/blog/pr-preview/pr-30/086b97d/zh/blog/refactor-bench-eval/"> <span>评测方法</span> <time datetime="2026-06-16T00:00:00.000Z">2026/6/16</time> <strong>一个客观的代码重构评估体系是如何构成的</strong> <p>以行为保持和结构静态检查为核心，用真实开源代码提交做数据、隔离环境测试、用 tree-sitter 做语法树匹配，避开大模型当裁判带来的主观漂移，精准测量大模型的代码重构能力边界。</p> </a><a href="/blog/pr-preview/pr-30/086b97d/zh/blog/browsecomp-query-hardening/"> <span>洞察</span> <time datetime="2026-06-12T00:00:00.000Z">2026/6/12</time> <strong>题面写得再绕，模型照样秒解——怎么让搜索题真正变难</strong> <p>搜索智能体训练需要难度适中的题：模型不能秒解，但认真搜索可解。我们设计了 Hardener-Solver-Critic 多智能体闭环，用模型真实求解行为增强题目难度，在 BrowseComp 风格合成题上将 62% 的样本推入了可训练区间。</p> </a><a href="/blog/pr-preview/pr-30/086b97d/zh/blog/t2i-multi-module-evaluation/"> <span>洞察</span> <time datetime="2026-05-21T00:00:00.000Z">2026/5/21</time> <strong>如何构建面向文生图模型的多模块协同评估框架</strong> <p>以 LLM-as-a-Judge 为核心，通过 OCR/VQA/CLIP/IQA/HP 五模块协同校准，突破单一指标 benchmark 局限，全面捕捉现代文生图模型的真实能力边界。</p> </a> </div> </section> </div>  </main> <footer class="site-footer site-footer--horizon"> <div class="horizon-footer__main"> <div class="horizon-footer__brand"> <a class="horizon-footer__identity" href="/blog/pr-preview/pr-30/086b97d/zh/"> <strong>Lens Frontier</strong> <span>模型评测数据平台</span> </a> <p>发布评测研究；榜单与 Data Card 仅在资料审核完成后上线。</p> </div> <nav class="horizon-footer__nav" aria-label="Footer navigation"> <div class="horizon-footer__nav-group"> <span>探索</span> <a href="/blog/pr-preview/pr-30/086b97d/zh/#leaderboard">榜单</a><a href="/blog/pr-preview/pr-30/086b97d/zh/benchmarks/">Benchmarks</a> </div><div class="horizon-footer__nav-group"> <span>研究</span> <a href="/blog/pr-preview/pr-30/086b97d/zh/blog/">博客</a><a href="/blog/pr-preview/pr-30/086b97d/zh/blog/tags/">研究主题</a><a href="/blog/pr-preview/pr-30/086b97d/zh/timeline/">时间线</a> </div><div class="horizon-footer__nav-group"> <span>实验室</span> <a href="/blog/pr-preview/pr-30/086b97d/zh/about/">关于</a> </div> </nav> </div> <div class="horizon-footer__bottom"> <span>© 2026 Lens Frontier</span> <div> <a href="https://github.com/Lens-Frontier/blog" target="_blank" rel="noreferrer">GitHub</a> <a href="/blog/pr-preview/pr-30/086b97d/zh/rss.xml">RSS</a> </div> <a href="#top">TOP <span aria-hidden="true">↑</span></a> </div> </footer> </div> <script>(function(){const lang = "zh";
+
+	(() => {
+		const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+		const scrollMilestones = [25, 50, 75, 90, 100];
+
+		const article = document.querySelector('[data-analytics-page="article"]');
+		const articleParams =
+			article ?
+				{
+					content_type: article.dataset.analyticsCollection,
+					item_id: article.dataset.analyticsArticleId,
+					language: article.dataset.analyticsLang || lang,
+				}
+			:	{ language: lang };
+
+		const sendEvent = (name, params = {}) => {
+			if (doNotTrack || typeof window.gtag !== 'function') return;
+			window.gtag('event', name, {
+				...articleParams,
+				...params,
+			});
+		};
+
+		const pageKind = () => {
+			if (article) return 'article';
+			const segments = window.location.pathname.split('/').filter(Boolean);
+			const contentSegments = segments[0] === 'blog' ? segments.slice(1) : segments;
+			if (contentSegments[0] === 'zh' || contentSegments[0] === 'en') contentSegments.shift();
+			return contentSegments[0] || 'home';
+		};
+
+		const linkPath = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? url.pathname : undefined;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const linkDomain = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? undefined : url.hostname;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const classifyLink = (link) => {
+			if (link.closest('.brand')) return { event: 'lf_navigation_click', type: 'brand' };
+			if (link.closest('.nav')) return { event: 'lf_navigation_click', type: 'primary_nav' };
+			if (link.closest('.lang-switch')) return { event: 'lf_language_switch', type: 'language_switch' };
+			if (link.closest('.footer-links')) return { event: 'lf_navigation_click', type: 'footer_nav' };
+			if (link.closest('.channel-list')) return { event: 'lf_content_discovery', type: 'home_channel' };
+			if (link.closest('.entry-row') && link.matches('.entry-title')) return { event: 'lf_content_discovery', type: 'entry_title' };
+			if (link.closest('.tag-cloud')) return { event: 'lf_tag_click', type: 'tag_cloud' };
+			if (link.closest('.tag-list')) return { event: 'lf_tag_click', type: 'tag_list' };
+			if (link.closest('.article-actions')) return { event: 'lf_article_resource_click', type: 'article_resource' };
+			if (link.closest('.authors')) return { event: 'lf_author_profile_click', type: 'author_profile' };
+			if (link.closest('.article-body')) return { event: 'lf_article_body_link_click', type: 'article_body_link' };
+			return linkDomain(link.href) ? { event: 'lf_outbound_click', type: 'outbound' } : { event: 'lf_internal_click', type: 'internal' };
+		};
+
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const zoomValue = document.querySelector('[data-lightbox-zoom-value]');
+		let imageLightboxOpen = false;
+
+		const recordImageOpen = (imageTrigger) => {
+			const images = [...document.querySelectorAll('.article-body img[data-lightbox-trigger]')];
+			imageLightboxOpen = true;
+			sendEvent('lf_article_image_open', {
+				image_index: images.indexOf(imageTrigger) + 1,
+				image_count: images.length,
+			});
+		};
+
+		const recordImageZoom = (direction) => {
+			window.setTimeout(() => {
+				sendEvent('lf_article_image_zoom', {
+					zoom_direction: direction,
+					zoom_value: zoomValue?.textContent,
+				});
+			}, 0);
+		};
+
+		if (lightbox && typeof MutationObserver !== 'undefined') {
+			new MutationObserver(() => {
+				if (!imageLightboxOpen || !lightbox.hidden) return;
+				imageLightboxOpen = false;
+				sendEvent('lf_article_image_close');
+			}).observe(lightbox, { attributes: true, attributeFilter: ['hidden'] });
+		}
+
+		document.addEventListener('click', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.closest('.article-body img[data-lightbox-trigger]');
+			if (imageTrigger) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			const zoomIn = target.closest('[data-lightbox-zoom-in]');
+			const zoomOut = target.closest('[data-lightbox-zoom-out]');
+			if (zoomIn || zoomOut) {
+				recordImageZoom(zoomIn ? 'in' : 'out');
+				return;
+			}
+
+			const link = target.closest('a[href]');
+			if (!link) return;
+
+			const classification = classifyLink(link);
+			sendEvent(classification.event, {
+				link_type: classification.type,
+				link_path: linkPath(link.href),
+				link_domain: linkDomain(link.href),
+				page_kind: pageKind(),
+			});
+		});
+
+		document.addEventListener('keydown', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.matches('.article-body img[data-lightbox-trigger]') ? target : null;
+			if (imageTrigger && (event.key === 'Enter' || event.key === ' ')) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			if (!imageLightboxOpen) return;
+			if (event.key === '+' || event.key === '=') recordImageZoom('in');
+			if (event.key === '-' || event.key === '_') recordImageZoom('out');
+			if (event.key === '0') recordImageZoom('reset');
+		});
+
+		document.addEventListener(
+			'wheel',
+			(event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				if (!imageLightboxOpen || !target?.closest('[data-lightbox-stage]') || !(event.ctrlKey || event.metaKey)) return;
+				recordImageZoom(event.deltaY < 0 ? 'in' : 'out');
+			},
+			{ passive: true },
+		);
+
+		if (!article) return;
+
+		let maxDepth = 0;
+		let activeSeconds = 0;
+		const sentScrollMilestones = new Set();
+		let sentEngagedRead = false;
+		let scrollTickScheduled = false;
+
+		const scrollDepth = () => {
+			const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollable <= 0) return 100;
+			return Math.min(100, Math.max(0, Math.round((window.scrollY / scrollable) * 100)));
+		};
+
+		const maybeSendReadingEvents = () => {
+			maxDepth = Math.max(maxDepth, scrollDepth());
+			for (const milestone of scrollMilestones) {
+				if (maxDepth < milestone || sentScrollMilestones.has(milestone)) continue;
+				sentScrollMilestones.add(milestone);
+				sendEvent('lf_article_scroll_depth', {
+					scroll_depth: milestone,
+					active_seconds: activeSeconds,
+				});
+			}
+
+			if (!sentEngagedRead && activeSeconds >= 45 && maxDepth >= 50) {
+				sentEngagedRead = true;
+				sendEvent('lf_article_engaged_read', {
+					scroll_depth: maxDepth,
+					active_seconds: activeSeconds,
+				});
+			}
+		};
+
+		const tick = () => {
+			if (document.visibilityState === 'visible') activeSeconds += 1;
+			maybeSendReadingEvents();
+		};
+
+		const scheduleScrollRead = () => {
+			if (scrollTickScheduled) return;
+			scrollTickScheduled = true;
+			window.requestAnimationFrame(() => {
+				scrollTickScheduled = false;
+				maybeSendReadingEvents();
+			});
+		};
+
+		window.addEventListener('scroll', scheduleScrollRead, { passive: true });
+		document.addEventListener('visibilitychange', maybeSendReadingEvents);
+		window.setInterval(tick, 1000);
+		maybeSendReadingEvents();
+	})();
+})();</script> <script type="module">const o=window.matchMedia("(prefers-color-scheme: dark)"),c=document.querySelector("[data-theme-color]"),l=(e,t=!1)=>{document.documentElement.dataset.theme=e,document.documentElement.style.colorScheme=e,c?.setAttribute("content",e==="dark"?"#171a19":"#f4f6f5"),document.querySelectorAll("[data-theme-toggle]").forEach(a=>{const r=e==="dark"?a.dataset.lightLabel:a.dataset.darkLabel;r&&(a.setAttribute("aria-label",r),a.title=r),a.setAttribute("aria-pressed",e==="dark"?"true":"false")}),t&&localStorage.setItem("lens-frontier-theme",e),window.dispatchEvent(new CustomEvent("lens-frontier-theme-change",{detail:{theme:e}}))};document.querySelectorAll("[data-theme-toggle]").forEach(e=>{e.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";l(t,!0)})});o.addEventListener("change",e=>{localStorage.getItem("lens-frontier-theme")||l(e.matches?"dark":"light")});l(document.documentElement.dataset.theme==="dark"?"dark":"light");document.querySelectorAll(".mobile-nav").forEach(e=>{e.querySelectorAll("a").forEach(t=>t.addEventListener("click",()=>e.removeAttribute("open")))});</script> </body> </html>
