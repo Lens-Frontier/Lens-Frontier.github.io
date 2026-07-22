@@ -7,6 +7,7 @@ summary: "An LLM-as-a-Judge evaluation system with OCR/VQA/CLIP/IQA/HP modules a
 authors:
   - name: "Xiaowen Yang"
     github: "ShawnJoeng"
+    avatar: "/assets/authors/shawnjoeng.png"
 stance: "Existing T2I benchmarks cannot cover text rendering, world knowledge, or multi-view capabilities — a multi-module collaborative automated evaluation framework is needed"
 tags: ["evaluation", "text-to-image", "llm-as-a-judge", "benchmark"]
 ---
@@ -215,8 +216,6 @@ I hope these ideas are useful to others working on similar problems.
 
 ---
 
-Xiaowen Yang,
+Xiaowen Yang
 
-Strategy Product Manager for ERNIE-Image, Evaluation & Data Team, Baidu.
-
-May 21, 2026, Beijing.
+May 21, 2026.

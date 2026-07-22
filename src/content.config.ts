@@ -36,7 +36,7 @@ const papers = defineCollection({
 		codeUrl: z.url().optional(),
 		benchmarks: z.array(z.string()).default([]),
 		tasks: z.array(z.string()).default([]),
-		status: z.enum(['queued', 'reading', 'read', 'revisit']).default('read'),
+		status: z.enum(['working', 'preprint', 'accepted', 'published']).default('preprint'),
 	}),
 });
 
