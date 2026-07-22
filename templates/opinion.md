@@ -1,5 +1,5 @@
 ---
-title: "Opinion Title"
+title: "Insight Title"
 lang: "zh"
 date: 2026-05-19
 # updated: 2026-05-23

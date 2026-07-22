@@ -3,7 +3,7 @@ title: "Paper Title"
 lang: "zh"
 date: 2026-05-19
 # updated: 2026-05-23
-summary: "一句话说明这篇论文分享的重点。"
+summary: "一句话说明论文研究问题、方法或主要贡献。"
 authors:
   - name: "Your Name"
     github: "your-github-id"
@@ -14,17 +14,17 @@ codeUrl: "https://github.com/example/repo"
 benchmarks: ["Benchmark Name"]
 tasks: ["task-name"]
 tags: ["evaluation"]
-status: "read"
+status: "preprint"
 ---
 
-## TL;DR
+## 研究问题
 
-## 它在测什么
+## 方法
 
-## 怎么评测
+## 实验设置
 
-## 关键结果
+## 主要结果与贡献
 
-## 我的判断
+## 局限与适用边界
 
-## 局限与后续问题
+## 论文、代码与数据
