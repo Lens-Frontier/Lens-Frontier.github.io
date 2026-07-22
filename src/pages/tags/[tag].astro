@@ -19,4 +19,4 @@ export async function getStaticPaths() {
 const { tag } = Astro.props;
 ---
 
-<RedirectLayout to={`/zh/tags/${encodeURIComponent(tag)}/`} title={`Tag: ${tag}`} />
+<RedirectLayout to={`/zh/blog/tags/${encodeURIComponent(tag)}/`} title={`研究主题：${tag}`} />

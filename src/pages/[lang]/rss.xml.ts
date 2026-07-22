@@ -1,5 +1,5 @@
 import rss from '@astrojs/rss';
-import { languageFrom, languages, localizedPath, siteFor } from '../../lib/site';
+import { entryPath, languageFrom, languages, siteFor } from '../../lib/site';
 import { publishedEntries } from '../../lib/content';
 
 export function getStaticPaths() {
@@ -14,7 +14,7 @@ export async function GET(context: any) {
 		title: entry.data.title,
 		description: entry.data.summary,
 		pubDate: entry.data.date,
-		link: localizedPath(lang, `/${collection}/${entry.id}/`),
+		link: entryPath(collection, entry.id, lang),
 	}));
 
 	return rss({

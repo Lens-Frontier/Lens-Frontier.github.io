@@ -24,7 +24,7 @@ const opinions = await publishedCollection('opinions', lang);
 	<section class="listing">
 		<div class="entry-list">
 			{opinions.length ? (
-				opinions.map((entry) => <EntryRow entry={entry} collection="opinions" label="opinion" lang={lang} />)
+				opinions.map((entry) => <EntryRow entry={entry} collection="opinions" lang={lang} />)
 			) : (
 				<div class="empty-state">
 					<p>{labels.emptyTitle}</p>

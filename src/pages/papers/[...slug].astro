@@ -10,4 +10,4 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 ---
 
-<RedirectLayout to={`/${entry.data.lang}/papers/${entry.id}/`} title={entry.data.title} description={entry.data.summary} />
+<RedirectLayout to={`/${entry.data.lang}/blog/${entry.id}/`} title={entry.data.title} description={entry.data.summary} />

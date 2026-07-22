@@ -24,7 +24,7 @@ const papers = await publishedCollection('papers', lang);
 	<section class="listing">
 		<div class="entry-list">
 			{papers.length ? (
-				papers.map((entry) => <EntryRow entry={entry} collection="papers" label="paper" lang={lang} />)
+				papers.map((entry) => <EntryRow entry={entry} collection="papers" lang={lang} />)
 			) : (
 				<div class="empty-state">
 					<p>{labels.emptyTitle}</p>

@@ -26,7 +26,7 @@ const entries = await publishedEntries(lang);
 		<div class="entry-list">
 			{entries.length ? (
 				entries.map(({ entry, collection }) => (
-					<EntryRow entry={entry} collection={collection} label={collection.slice(0, -1)} lang={lang} />
+					<EntryRow entry={entry} collection={collection} lang={lang} />
 				))
 			) : (
 				<div class="empty-state">

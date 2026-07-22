@@ -1,0 +1,63 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import '../../../../styles/blog-lab.css';
+import { languages, languageFrom, tagPath } from '../../../../lib/site';
+import { publishedEntries, tagsForLanguage } from '../../../../lib/content';
+
+export function getStaticPaths() {
+	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+const lang = languageFrom(Astro.props.lang);
+const tags = await tagsForLanguage(lang);
+const entries = await publishedEntries(lang);
+const countFor = (tag: string) => entries.filter(({ entry }) => entry.data.tags?.includes(tag)).length;
+const copy = lang === 'zh'
+	? {
+			title: '研究主题',
+			intro: '所有标签都属于 Blog，用来串联研究论文、评测方法、数据集版本和模型分析。',
+			kicker: 'BLOG / TOPICS',
+			index: '主题索引',
+			count: '篇记录',
+			empty: '发布研究记录后，主题会出现在这里。',
+		}
+	: {
+			title: 'Research topics',
+			intro: 'Every tag belongs to the Blog and connects research papers, evaluation methods, dataset releases, and model analyses.',
+			kicker: 'BLOG / TOPICS',
+			index: 'Topic index',
+			count: 'outputs',
+			empty: 'Topics will appear here as research outputs are published.',
+		};
+---
+
+<BaseLayout lang={lang} title={copy.title} description={copy.intro} alternatePath="/blog/tags/">
+	<div class="lab-blog lab-blog--topics">
+		<header class="lab-blog__hero lab-blog__hero--topics">
+			<div>
+				<span class="lab-blog__kicker">{copy.kicker}</span>
+				<h1>{copy.title}</h1>
+			</div>
+			<p>{copy.intro}</p>
+		</header>
+
+		<section class="lab-blog__topics" aria-labelledby="lab-blog-topic-index">
+			<header>
+				<h2 id="lab-blog-topic-index">{copy.index}</h2>
+				<span>{String(tags.length).padStart(2, '0')}</span>
+			</header>
+			{tags.length ? (
+				<nav aria-label={copy.index}>
+					{tags.map((tag, index) => (
+						<a href={tagPath(tag, lang)}>
+							<span>{String(index + 1).padStart(2, '0')}</span>
+							<strong>#{tag}</strong>
+							<small>{countFor(tag)} {copy.count}</small>
+							<i aria-hidden="true">↗</i>
+						</a>
+					))}
+				</nav>
+			) : <p class="lab-blog__empty">{copy.empty}</p>}
+		</section>
+	</div>
+</BaseLayout>

@@ -1,20 +1,34 @@
 ---
 import GoogleAnalytics from '../components/GoogleAnalytics.astro';
-import { path, site } from '../lib/site';
+import { languageFrom, languages, localizedPath, path, siteFor } from '../lib/site';
+import type { Language } from '../lib/site';
+
+type AlternatePath = string | Partial<Record<Language, string>>;
 
 interface Props {
 	to: string;
 	title?: string;
 	description?: string;
+	lang?: Language;
+	alternatePath?: AlternatePath;
 }
 
+const lang = languageFrom(Astro.props.lang);
+const site = siteFor(lang);
 const { to, title = 'Redirecting', description = site.description } = Astro.props;
-const href = path(to);
+const alternatePath = Astro.props.alternatePath ?? '/';
+const base = import.meta.env.BASE_URL || '/';
+const href = to.startsWith(base) ? to : path(to);
 const canonical = new URL(href, Astro.site ?? 'https://example.com');
+
+function alternatePathFor(targetLang: Language) {
+	if (typeof alternatePath === 'string') return alternatePath;
+	return alternatePath[targetLang] ?? alternatePath[lang] ?? '/';
+}
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang={site.htmlLang}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
@@ -23,6 +37,9 @@ const canonical = new URL(href, Astro.site ?? 'https://example.com');
 		<GoogleAnalytics />
 		<meta http-equiv="refresh" content={`0; url=${href}`} />
 		<link rel="canonical" href={canonical} />
+		{languages.map((item) => (
+			<link rel="alternate" hreflang={siteFor(item).htmlLang} href={localizedPath(item, alternatePathFor(item))} />
+		))}
 	</head>
 	<body>
 		<a href={href}>Continue to Lens Frontier</a>

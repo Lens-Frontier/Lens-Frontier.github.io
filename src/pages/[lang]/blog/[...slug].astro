@@ -1,0 +1,31 @@
+---
+import { render } from 'astro:content';
+import ArticleLayout from '../../../layouts/ArticleLayout.astro';
+import { publishedEntries } from '../../../lib/content';
+import { languages } from '../../../lib/site';
+
+export async function getStaticPaths() {
+	const paths = [];
+	for (const lang of languages) {
+		const entries = await publishedEntries(lang);
+		paths.push(...entries.map(({ entry, collection }) => ({
+			params: { lang, slug: entry.id },
+			props: {
+				entry,
+				type: collection === 'papers' ? 'paper' : collection === 'benchmarks' ? 'benchmark' : 'opinion',
+			},
+		})));
+	}
+	return paths;
+}
+
+const { entry, type } = Astro.props as {
+	entry: any;
+	type: 'paper' | 'benchmark' | 'opinion';
+};
+const { Content } = await render(entry);
+---
+
+<ArticleLayout entry={entry} type={type}>
+	<Content />
+</ArticleLayout>
