@@ -1,0 +1,651 @@
+/* Full-site color themes. Layout stays identical; only material and contrast change. */
+
+:root {
+	--theme-canvas: #f4f6f5;
+	--theme-surface: #fbfcfb;
+	--theme-surface-raised: #ffffff;
+	--theme-surface-soft: #f0f3f1;
+	--theme-ink: #17201f;
+	--theme-soft: #3f4a48;
+	--theme-muted: #596562;
+	--theme-faint: #68736f;
+	--theme-line: #d9dfdc;
+	--theme-line-strong: #bac4c0;
+	--theme-accent: #3b5f93;
+	--theme-accent-ink: #2f4f7b;
+	--theme-accent-soft: #edf1f7;
+	--theme-chart-grid: #dfe4e2;
+	--theme-chart-axis: #aeb9b5;
+	--theme-chart-inactive: #c7cfcc;
+	--theme-tooltip: #121716;
+	--theme-tooltip-ink: #ffffff;
+	--theme-chart-palette: #3b5f93, #8d4e50, #2f7468, #94632e, #705b8f, #4d7180, #82566f, #587047;
+}
+
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--theme-canvas: #171a19;
+	--theme-surface: #1d211f;
+	--theme-surface-raised: #232826;
+	--theme-surface-soft: #1a1e1c;
+	--theme-ink: #edf1ee;
+	--theme-soft: #c8d0cc;
+	--theme-muted: #a8b2ad;
+	--theme-faint: #8b9691;
+	--theme-line: #333a37;
+	--theme-line-strong: #4a5550;
+	--theme-accent: #8fa9cc;
+	--theme-accent-ink: #b5c7df;
+	--theme-accent-soft: #273445;
+	--theme-chart-grid: #303734;
+	--theme-chart-axis: #58635e;
+	--theme-chart-inactive: #4b5551;
+	--theme-tooltip: #ecefeb;
+	--theme-tooltip-ink: #17201f;
+	--theme-chart-palette: #91acd0, #c28486, #69a99d, #c79a61, #a08abb, #78a0af, #ae8298, #8ca477;
+}
+
+html,
+body,
+.site-header,
+.site-header__inner,
+.observatory-home,
+.bench-page,
+.benchmark-library,
+.lab-blog {
+	transition: background-color 220ms ease, border-color 220ms ease, color 220ms ease;
+}
+
+html,
+body {
+	background: var(--theme-canvas);
+	color: var(--theme-ink);
+}
+
+.theme-toggle {
+	position: relative;
+	display: grid;
+	width: 34px;
+	height: 34px;
+	flex: 0 0 auto;
+	place-items: center;
+	padding: 0;
+	border: 1px solid var(--theme-line);
+	border-radius: 50%;
+	background: transparent;
+	color: var(--theme-muted);
+	cursor: pointer;
+	transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+	color: var(--theme-ink);
+}
+
+.theme-toggle:active {
+	transform: scale(0.94);
+}
+
+.theme-toggle:focus-visible {
+	outline: 2px solid var(--theme-accent);
+	outline-offset: 3px;
+}
+
+.theme-toggle__icon {
+	position: relative;
+	display: block;
+	width: 12px;
+	height: 12px;
+	border: 1.5px solid currentColor;
+	border-radius: 50%;
+}
+
+:root[data-theme='dark'] .theme-toggle__icon {
+	border-color: transparent;
+	box-shadow: -4px 1px 0 -1px currentColor;
+	transform: translateX(2px);
+}
+
+:root[data-theme='dark'] .site-header {
+	border-color: var(--theme-line);
+	background: rgb(23 26 25 / 0.9);
+}
+
+:root[data-theme='dark'] .brand,
+:root[data-theme='dark'] .brand-wordmark strong,
+:root[data-theme='dark'] .nav a[aria-current='page'] {
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .brand-mark {
+	border-color: var(--theme-ink);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .nav a,
+:root[data-theme='dark'] .nav a > span,
+:root[data-theme='dark'] .lang-switch a {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .nav a[aria-current='page'] {
+	border-bottom-color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .nav a:hover,
+:root[data-theme='dark'] .nav a:focus-visible,
+:root[data-theme='dark'] .lang-switch a:hover,
+:root[data-theme='dark'] .lang-switch a:focus-visible {
+	color: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .lang-switch,
+:root[data-theme='dark'] .mobile-nav summary,
+:root[data-theme='dark'] .mobile-nav > nav {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .lang-switch a[aria-current='true'],
+:root[data-theme='dark'] .mobile-nav[open] summary {
+	background: var(--theme-ink);
+	color: var(--theme-canvas);
+}
+
+:root[data-theme='dark'] .mobile-nav > nav a {
+	border-color: var(--theme-line);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .mobile-nav > nav a[aria-current='page'],
+:root[data-theme='dark'] .mobile-nav > nav a:hover,
+:root[data-theme='dark'] .mobile-nav > nav a:focus-visible {
+	background: var(--theme-accent-soft);
+	color: var(--theme-accent-ink);
+}
+
+/* Homepage and interactive leaderboard. */
+:root[data-theme='dark'] .observatory-home {
+	--obs-bg: var(--theme-canvas);
+	--obs-surface: var(--theme-surface);
+	--obs-ink: var(--theme-ink);
+	--obs-muted: var(--theme-muted);
+	--obs-faint: var(--theme-faint);
+	--obs-line: var(--theme-line);
+	--obs-line-dark: var(--theme-line-strong);
+	--obs-accent: var(--theme-accent);
+	--obs-accent-soft: var(--theme-accent-soft);
+}
+
+:root[data-theme='dark'] .chart-lab__compact-head,
+:root[data-theme='dark'] .chart-lab,
+:root[data-theme='dark'] .chart-lab__stage,
+:root[data-theme='dark'] .chart-lab__bench-signal,
+:root[data-theme='dark'] .chart-lab__bench-signal > header,
+:root[data-theme='dark'] .chart-lab__ranking-plot,
+:root[data-theme='dark'] .chart-lab__bench-brief,
+:root[data-theme='dark'] .chart-lab__filter-popover,
+:root[data-theme='dark'] .chart-lab__filter-popover > header,
+:root[data-theme='dark'] .chart-lab__filter-grid,
+:root[data-theme='dark'] .chart-lab__filter-grid > section,
+:root[data-theme='dark'] .chart-lab__board-list,
+:root[data-theme='dark'] .chart-lab__model-list,
+:root[data-theme='dark'] .chart-lab__signal-list,
+:root[data-theme='dark'] .chart-lab__signal-list > button,
+:root[data-theme='dark'] .chart-lab__workspace,
+:root[data-theme='dark'] .chart-lab__canvas,
+:root[data-theme='dark'] .obs-card-index > a,
+:root[data-theme='dark'] .obs-journal__list > a {
+	background: var(--theme-surface-raised);
+}
+
+:root[data-theme='dark'] .chart-lab__mode-switch,
+:root[data-theme='dark'] .chart-lab__compact-actions > button,
+:root[data-theme='dark'] .chart-lab__search input,
+:root[data-theme='dark'] .chart-lab__filter-presets button,
+:root[data-theme='dark'] .chart-lab__selection-dock,
+:root[data-theme='dark'] .chart-lab__selection-list button,
+:root[data-theme='dark'] .chart-lab__selection-dock > button {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface);
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .chart-lab__mode-switch button:hover,
+:root[data-theme='dark'] .chart-lab__mode-switch button:focus-visible,
+:root[data-theme='dark'] .chart-lab__mode-switch button[aria-pressed='true'],
+:root[data-theme='dark'] .chart-lab__compact-actions > button:hover,
+:root[data-theme='dark'] .chart-lab__compact-actions > button:focus-visible,
+:root[data-theme='dark'] .chart-lab__compact-actions > button[aria-expanded='true'],
+:root[data-theme='dark'] .chart-lab__filter-presets button[aria-pressed='true'] {
+	background: var(--theme-surface-raised);
+	color: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .chart-lab__signal-list > button:hover,
+:root[data-theme='dark'] .chart-lab__signal-list > button:focus-visible {
+	background: #282e2b;
+}
+
+:root[data-theme='dark'] .chart-lab__signal-list > button[aria-pressed='true'],
+:root[data-theme='dark'] .chart-lab__board-list label:hover,
+:root[data-theme='dark'] .chart-lab__model-list label:hover {
+	background: var(--theme-accent-soft);
+}
+
+:root[data-theme='dark'] .chart-lab__stage > footer,
+:root[data-theme='dark'] .chart-lab__ranking-plot > header,
+:root[data-theme='dark'] .chart-lab__filter-section-title,
+:root[data-theme='dark'] .obs-method__steps {
+	background: var(--theme-surface-soft);
+}
+
+:root[data-theme='dark'] .chart-lab__filter-popover {
+	box-shadow: 0 24px 68px rgb(0 0 0 / 0.38);
+}
+
+:root[data-theme='dark'] .chart-lab__model-name img {
+	border-radius: 3px;
+	background: #ffffff;
+	padding: 2px;
+}
+
+/* Benchmark library and detail pages. */
+:root[data-theme='dark'] body:has(.benchmark-library) {
+	--library-paper: var(--theme-canvas);
+	--library-white: var(--theme-surface-raised);
+	--library-ink: var(--theme-ink);
+	--library-muted: var(--theme-muted);
+	--library-faint: var(--theme-faint);
+	--library-line: var(--theme-line);
+	--library-accent: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .benchmark-library__index > article:hover {
+	background: var(--theme-accent-soft);
+}
+
+:root[data-theme='dark'] body:has(.bench-page) {
+	--bench-paper: var(--theme-canvas);
+	--bench-surface: var(--theme-surface);
+	--bench-ink: var(--theme-ink);
+	--bench-soft: var(--theme-soft);
+	--bench-muted: var(--theme-muted);
+	--bench-faint: var(--theme-faint);
+	--bench-line: var(--theme-line);
+	--bench-line-strong: var(--theme-line-strong);
+	--bench-accent: var(--theme-accent);
+	--bench-accent-soft: var(--theme-accent-soft);
+	background: var(--theme-canvas);
+}
+
+:root[data-theme='dark'] body:has(.bench-page) .site-header,
+:root[data-theme='dark'] .bench-page__nav {
+	background: rgb(23 26 25 / 0.92);
+}
+
+:root[data-theme='dark'] body:has(.bench-page) .brand-mark {
+	background: var(--theme-ink);
+	color: var(--theme-canvas);
+}
+
+:root[data-theme='dark'] .bench-page__nav a {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .bench-scoreboard,
+:root[data-theme='dark'] .bench-scoreboard__chart,
+:root[data-theme='dark'] .bench-scoreboard__table,
+:root[data-theme='dark'] .bench-scoreboard__viewbar select,
+:root[data-theme='dark'] .bench-scoreboard__share,
+:root[data-theme='dark'] .bench-model-list button,
+:root[data-theme='dark'] .bench-specimens,
+:root[data-theme='dark'] .bench-specimens > header nav button.is-active,
+:root[data-theme='dark'] .bench-downloads button,
+:root[data-theme='dark'] .bench-chart-share,
+:root[data-theme='dark'] .bench-task-outcomes,
+:root[data-theme='dark'] .bench-task-outcomes td:last-child {
+	background: var(--theme-surface-raised);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .bench-scoreboard__viewbar select:disabled,
+:root[data-theme='dark'] .bench-scoreboard__share:disabled {
+	opacity: 0.72;
+}
+
+:root[data-theme='dark'] .bench-table-model img,
+:root[data-theme='dark'] .bench-model-name img {
+	border-radius: 3px;
+	background: #ffffff;
+	padding: 2px;
+}
+
+:root[data-theme='dark'] .bench-scoreboard__table tbody tr:hover,
+:root[data-theme='dark'] .bench-scoreboard__table tbody tr.is-active,
+:root[data-theme='dark'] .bench-model-list button:hover,
+:root[data-theme='dark'] .bench-model-list button.is-active {
+	background: var(--theme-accent-soft);
+}
+
+:root[data-theme='dark'] .bench-task-outcomes td.is-fail {
+	background: #3a2426;
+	color: #f0a5a9;
+}
+
+:root[data-theme='dark'] .bench-family-coverage__bar {
+	background: var(--theme-line);
+}
+
+:root[data-theme='dark'] .bench-protocol li > span {
+	color: #17201f;
+}
+
+:root[data-theme='dark'] .bench-trust-register summary small,
+:root[data-theme='dark'] .bench-specimen__assertions li em,
+:root[data-theme='dark'] .bench-task-outcomes header p span:first-child {
+	color: #7fb29b;
+}
+
+:root[data-theme='dark'] .bench-trust-register summary small.is-documented {
+	color: #d1aa67;
+}
+
+:root[data-theme='dark'] .bench-specimen__task > div b,
+:root[data-theme='dark'] .bench-task-outcomes header p span:last-child {
+	color: #e98686;
+}
+
+:root[data-theme='dark'] .bench-data-card__actions button {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .bench-specimens > header nav button {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .bench-specimens > header nav button.is-active {
+	border-color: var(--theme-accent);
+	background: var(--theme-accent-soft);
+	color: var(--theme-accent-ink);
+}
+
+/* Blog indexes and long-form editorial pages. */
+:root[data-theme='dark'] body:has(.lab-blog) {
+	--blog-paper: var(--theme-canvas);
+	--blog-white: var(--theme-surface-raised);
+	--blog-ink: var(--theme-ink);
+	--blog-muted: var(--theme-muted);
+	--blog-faint: var(--theme-faint);
+	--blog-line: var(--theme-line);
+	--blog-accent: var(--theme-accent);
+}
+
+:root[data-theme='dark'] body:has(.article),
+:root[data-theme='dark'] body:has(.page-title),
+:root[data-theme='dark'] body:has(.tag-cloud),
+:root[data-theme='dark'] .shell > main:has(> .article),
+:root[data-theme='dark'] .shell > main:has(> .page-title),
+:root[data-theme='dark'] .shell > main:has(> .tag-cloud) {
+	background: var(--theme-canvas);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] :where(.article, .page-title, .listing, .tag-cloud) {
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] :where(.dek, .article-views, .tag-list a, .article-actions a, .entry-meta span, .page-title > p, .entry-row__body > p, .empty-state span, .article-body figcaption) {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .authors a:not(.author-name),
+:root[data-theme='dark'] .spec-table dt {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] :where(.article-header, .spec-table, .page-title, .entry-list, .tag-cloud) {
+	border-color: var(--theme-line-strong);
+}
+
+:root[data-theme='dark'] :where(.spec-table div + div, .article-views, .article-body h2, .entry-row, .entry-row__body, .empty-state, .tag-cloud a) {
+	border-color: var(--theme-line);
+}
+
+:root[data-theme='dark'] :where(.article h1, .page-title h1, .article-body h2, .article-body h3, .entry-title, .article-views strong, .tag-cloud a) {
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .article-body h4 {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] :where(.eyebrow, .article-body a, .entry-row__rail, .entry-title:hover, .entry-title:focus-visible, .tag-cloud a:hover, .tag-cloud a:focus-visible) {
+	color: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .article-body blockquote {
+	border-color: var(--theme-accent);
+	color: var(--theme-soft);
+}
+
+:root[data-theme='dark'] .article-body :not(pre) > code,
+:root[data-theme='dark'] .article-body pre:not([data-language='mermaid']),
+:root[data-theme='dark'] .article-body .mermaid,
+:root[data-theme='dark'] .article-body table {
+	border-color: var(--theme-line);
+	background: var(--theme-surface-raised) !important;
+	color: var(--theme-ink) !important;
+}
+
+:root[data-theme='dark'] .article-body pre:not([data-language='mermaid']) {
+	border-left-color: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .article-body th,
+:root[data-theme='dark'] .article-body td {
+	border-color: var(--theme-line);
+}
+
+:root[data-theme='dark'] .article-body th,
+:root[data-theme='dark'] .article-body tbody tr:nth-child(even) td {
+	background: var(--theme-surface-soft);
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .article-body img,
+:root[data-theme='dark'] .authors img {
+	border-color: var(--theme-line);
+}
+
+:root[data-theme='dark'] .article-inline-panel,
+:root[data-theme='dark'] .article-inline-card,
+:root[data-theme='dark'] .article-inline-node {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .article-inline-card.is-danger {
+	border-top-color: #c28486;
+	background: #342426;
+}
+
+:root[data-theme='dark'] .article-inline-card.is-success,
+:root[data-theme='dark'] .article-inline-node.is-accent {
+	border-color: #69a99d;
+	background: #20312d;
+}
+
+:root[data-theme='dark'] .article-inline-card.is-warning {
+	border-top-color: #c79a61;
+	background: #332d20;
+}
+
+:root[data-theme='dark'] .article-inline-panel--flow {
+	background: var(--theme-surface-soft);
+}
+
+:root[data-theme='dark'] .article-inline-flow > span {
+	color: var(--theme-faint);
+}
+
+/* Preserved lab-v1 concept page. It remains public, so it follows the same theme contract. */
+:root[data-theme='dark'] .shell > main:has(.lf-lab-platform) {
+	background: var(--theme-canvas);
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) {
+	border-color: var(--theme-line);
+	background: rgb(23 26 25 / 0.9);
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) .site-header__inner,
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) .brand-wordmark strong {
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) .brand-mark {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-ink);
+	color: var(--theme-canvas);
+	box-shadow: none;
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) :where(.brand-wordmark small, .nav a, .lang-switch a) {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) .lang-switch {
+	border-color: var(--theme-line-strong);
+	background: var(--theme-surface-raised);
+}
+
+:root[data-theme='dark'] .site-header:has(+ main .lf-lab-platform) .lang-switch a[aria-current='true'] {
+	background: var(--theme-accent);
+	color: #17201f;
+}
+
+:root[data-theme='dark'] .lf-lab-platform {
+	--lab-bg: var(--theme-canvas);
+	--lab-surface: var(--theme-surface-raised);
+	--lab-ink: var(--theme-ink);
+	--lab-soft: var(--theme-soft);
+	--lab-muted: var(--theme-muted);
+	--lab-faint: var(--theme-faint);
+	--lab-line: var(--theme-line);
+	--lab-line-strong: var(--theme-line-strong);
+	--lab-blue: var(--theme-accent);
+	--lab-blue-ink: var(--theme-accent-ink);
+	--lab-blue-soft: var(--theme-accent-soft);
+	--lab-green: #7fb29b;
+	--lab-shadow: 0 24px 70px rgb(0 0 0 / 0.28);
+	background: var(--theme-canvas);
+}
+
+:root[data-theme='dark'] :where(.lf-lab-board, .lf-lab-note, .lf-lab-card, .lf-lab-blog, .lf-lab-empty) {
+	background: var(--theme-surface-raised);
+	box-shadow: none;
+}
+
+:root[data-theme='dark'] .lf-lab-tabs {
+	background: var(--theme-surface);
+}
+
+:root[data-theme='dark'] :where(.lf-lab-button, .lf-lab-panel-head a, .lf-lab-panel-foot a, .lf-lab-section-head > a, .lf-lab-note-top a) {
+	background: var(--theme-surface);
+	color: var(--theme-accent-ink);
+}
+
+:root[data-theme='dark'] .lf-lab-button--primary {
+	background: var(--theme-accent);
+	color: #17201f;
+	box-shadow: none;
+}
+
+:root[data-theme='dark'] :where(.lf-lab-button--primary:hover, .lf-lab-button--primary:focus-visible) {
+	background: var(--theme-accent-ink);
+	color: #17201f;
+}
+
+:root[data-theme='dark'] :where(.lf-lab-tab:hover, .lf-lab-tab:focus-visible, .lf-lab-tab.is-active) {
+	background: var(--theme-surface-raised);
+}
+
+:root[data-theme='dark'] :where(.lf-lab-row:hover, .lf-lab-row:focus-visible, .lf-lab-card > button:hover, .lf-lab-card > button:focus-visible) {
+	background: var(--theme-surface-soft);
+}
+
+:root[data-theme='dark'] .lf-lab-card.is-open > button {
+	background: var(--theme-accent-soft);
+}
+
+:root[data-theme='dark'] .lf-lab-score i {
+	background: var(--theme-line);
+}
+
+:root[data-theme='dark'] .lf-lab-score i::after {
+	background: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .lf-lab-card-detail li {
+	background: var(--theme-surface);
+}
+
+:root[data-theme='dark'] .shell:has(.lf-lab-platform) .site-footer.site-footer--horizon {
+	border-color: var(--theme-line);
+	background: #121716;
+}
+
+/* Utility and error pages need explicit dark values because they predate theme tokens. */
+:root[data-theme='dark'] .not-found__code span:nth-child(2),
+:root[data-theme='dark'] .not-found__body h1,
+:root[data-theme='dark'] .not-found__links a {
+	color: var(--theme-ink);
+}
+
+:root[data-theme='dark'] .not-found__code {
+	color: var(--theme-accent);
+}
+
+:root[data-theme='dark'] .not-found__body > p:not(.eyebrow) {
+	color: var(--theme-muted);
+}
+
+:root[data-theme='dark'] .not-found__links,
+:root[data-theme='dark'] .not-found__links a {
+	border-color: var(--theme-line-strong);
+}
+
+:root[data-theme='dark'] :where(.not-found__links a:hover, .not-found__links a:focus-visible) {
+	background: var(--theme-accent-soft);
+	color: var(--theme-accent-ink);
+}
+
+@media (max-width: 620px) {
+	.theme-toggle {
+		width: 31px;
+		height: 31px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html,
+	body,
+	.site-header,
+	.site-header__inner,
+	.observatory-home,
+	.bench-page,
+	.benchmark-library,
+	.lab-blog {
+		transition: none;
+	}
+}
