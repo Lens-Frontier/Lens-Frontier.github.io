@@ -1,0 +1,916 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import '../../../styles/benchmark-detail.css';
+import {
+	benchmarkCatalog,
+	categoryLabels,
+	evidenceLabels,
+	statusLabels,
+	type CatalogAsset,
+} from '../../../lib/benchmarkData';
+import { benchmarkDetailContent, benchmarkEvidenceContent } from '../../../lib/benchmarkDetailData';
+import { modelBrand } from '../../../lib/modelBrand';
+import { languageFrom, languages, localizedPath, type Language } from '../../../lib/site';
+
+export function getStaticPaths() {
+	return languages.flatMap((lang) =>
+		benchmarkCatalog(lang).map((asset) => ({
+			params: { lang, id: asset.id },
+			props: { lang, asset },
+		})),
+	);
+}
+
+const { asset } = Astro.props as { lang: Language; asset: CatalogAsset };
+const lang = languageFrom(Astro.props.lang);
+const categories = categoryLabels(lang);
+const statuses = statusLabels(lang);
+const evidence = evidenceLabels(lang);
+const detail = benchmarkDetailContent(asset.id, lang);
+const researchEvidence = benchmarkEvidenceContent(asset.id, lang);
+const allBenchmarksPath = localizedPath(lang, '/benchmarks/');
+const homePath = localizedPath(lang, '/');
+const dataPagePath = localizedPath(lang, `/bench/${asset.id}/data/`);
+const leaders = asset.leaders ?? [];
+const scores = leaders.map((leader) => leader.score);
+const spread = scores.length > 1 ? Math.max(...scores) - Math.min(...scores) : 0;
+const topScore = scores.length ? Math.max(...scores) : null;
+const bottomScore = scores.length ? Math.min(...scores) : null;
+const scoreRange = topScore !== null && bottomScore !== null ? `${bottomScore.toFixed(1)}–${topScore.toFixed(1)}` : null;
+const reviewedCount = leaders.filter((leader) => leader.evidence !== 'pending').length;
+const displayCapability = (value: string) => value.replaceAll('_', ' ');
+const leaderPayload = leaders.map((leader, index) => ({
+	rank: index + 1,
+	model: leader.model,
+	modelId: leader.modelId,
+	brand: modelBrand(leader.model),
+	score: leader.score,
+	ciLow: leader.ciLow ?? leader.score,
+	ciHigh: leader.ciHigh ?? leader.score,
+	sampleSize: leader.sampleSize,
+	publishedAt: leader.publishedAt,
+	evidenceRef: leader.evidenceRef,
+	evidenceDepth: leader.evidenceDepth,
+	evidence: evidence[leader.evidence],
+	evidenceKey: leader.evidence,
+}));
+
+const copy = lang === 'zh'
+	? {
+		back: '全部 Benchmarks',
+		sections: ['榜单', '任务与验证', '分析', 'Data Card'],
+		status: '发布状态',
+		domain: '能力域',
+		metric: '主指标',
+		metricValue: '归一化均分 / 100',
+		families: '任务总数',
+		models: '已评模型',
+		leaderboard: 'Leaderboard',
+		leaderboardBody: '默认展示论文主指标：528 个 code-derivable 任务在 code-only 条件下的归一化均分。图表和表格中的数值均来自论文 v1。',
+		preview: '论文报告结果；95% CI 使用 10,000 次任务 bootstrap。公开仓库尚未提交逐任务模型输出与 judge 记录。',
+		search: '搜索模型',
+		searchPlaceholder: '输入模型名称',
+		filter: '证据状态',
+		filterAll: '全部结果',
+		filterReviewed: '已验证 / 已复核',
+		filterPending: '待复核',
+		modelSelection: '模型选择',
+		selectHint: '选择模型',
+			chartView: '图表',
+			tableView: '表格',
+			shareImage: '复制分享图',
+			sharingImage: '正在生成…',
+			shareCopied: '已复制，可直接粘贴',
+			shareDownloaded: '已下载 PNG',
+			shareFailed: '生成失败，请重试',
+		metricControl: '指标',
+		sampleSize: '任务数',
+		confidence: '95% 置信区间',
+		higherBetter: '分数越高越好',
+		fullEvidence: '完整',
+		partialEvidence: '部分',
+		rank: '排名',
+		visibleModels: '当前显示',
+		selected: '当前模型',
+		score: '得分',
+		evidence: '证据',
+		noResults: '没有符合筛选条件的模型。',
+		noLeaderboard: '榜单尚未公开',
+			noLeaderboardBody: '该 Bench 已进入目录；模型结果会在公开运行记录、版本、协议和证据通过检查后发布。',
+		tasks: 'Tasks & Verification',
+		tasksBody: '这一节只回答两件事：模型接到什么任务，以及输出如何被判定；上方榜单是这套 Task × Verify 机制汇总后的得分。',
+		familyCount: '个能力任务族',
+			taskCoverage: '个已公开任务',
+		viewTree: '查看文件树',
+		publicExampleTag: '公开样例',
+		expected: '预期',
+		specimen: '代表性任务',
+		publicExample: '来自公开任务文件',
+		context: '任务上下文',
+		input: '任务输入',
+		assertions: 'Verify 机制 · Gold rubric',
+		assertionNote: 'Judge 将模型答案与 gold answer / rubric 对照，按 Accuracy、Completeness、Specificity 各 0–5 分评分；归一化后计入上方榜单。',
+		noSpecimen: '真实任务样例将在脱敏与可复核处理完成后公开。',
+		analysis: 'Analysis',
+		analysisBody: '用分数分布和证据覆盖解释当前结果能说明什么，同时明确它还不能支持哪些结论。',
+		spread: '公开结果首尾分差',
+		reviewCoverage: '已验证或复核',
+		resultCount: '公开模型结果',
+		distribution: '得分分布',
+		distributionBody: '模型数量 / 分数区间',
+		evidenceCoverage: '证据覆盖',
+		evidenceCoverageBody: '按当前结果状态统计',
+		whatSupports: '当前证据支持',
+		conditionResults: '三种实验条件',
+		codeTaskSet: 'Code-derivable · 528 tasks',
+		docTaskSet: 'Doc-dependent · 100 tasks',
+		categoryResults: '主任务集的类别得分',
+		conditionLegend: 'Closed-book / Code-only / Documented',
+		findingOne: `当前预览结果覆盖 ${leaders.length} 个模型，分数跨度为 ${spread.toFixed(1)}。这说明任务集具备初步区分度。`,
+		findingTwo: `${reviewedCount} 个结果已进入验证或复核状态；正式比较仍需补齐重复运行和置信区间。`,
+		limitations: '限制与边界',
+			limitationsBody: `${asset.name} 的结论只适用于已公开的任务集、执行协议和评分规则；材料尚未发布时，不应从目录简介推断模型能力或比较结果。`,
+		pendingAnalysis: '首轮公开结果发布后，这里将展示分数分布、证据覆盖与失败模式。',
+		method: 'Data Card',
+		methodBody: '用最少的信息说明数据集测什么、如何验证、如何计分以及能否复用；精确运行参数保留在技术记录中。',
+		publicProfile: '公开数据说明',
+		methodSummary: '构建与评分方法',
+		methodSummaryBody: '四个步骤概括任务如何生成、验证并进入榜单。',
+		evidenceBoundary: '证据边界',
+		technicalRecord: '复现与技术记录',
+		technicalRecordBody: '固定提交、运行配置、置信区间与证据状态，供复核和精确复现使用。',
+		openTechnicalRecord: '展开技术记录',
+		closeTechnicalRecord: '收起技术记录',
+		openDataResource: '查看数据与复现',
+		protocol: [
+			['Scope', '定义任务、能力边界、约束和成功条件。'],
+			['Run', '在受控条件下执行模型并捕获产物与轨迹。'],
+			['Judge', '依据固定规则、自动检查或复核协议评分。'],
+			['Publish', '汇总结果、附加证据并记录版本变化。'],
+		],
+		trustRecords: [
+				['任务来源', '待确认', `当前来源为${asset.source}；正式发布还需要公开版本或不可变标识。`],
+				['执行协议', '待提交', '工具、时间、网络、资源和模型配置需随正式结果共同发布。'],
+			['证据覆盖', leaders.length ? `${reviewedCount}/${leaders.length}` : '待发布', '结果状态与原始运行证据分离记录，避免把待复核结果当作已验证结果。'],
+				['已知限制', '待提交', '限制与适用边界需要随正式 Data Card 一起公开。'],
+		],
+		viewDetails: '查看说明',
+		versionHistory: '版本记录',
+		viewFullRecord: '查看完整记录',
+			currentVersion: 'Pending release',
+			currentVersionBody: '目录信息已登记；任务、协议、结果与证据尚未完成公开审核。',
+		dataCard: 'Technical Manifest',
+		dataCardBody: '完整机器可读参数，仅在需要复现时展开。',
+		viewDataCard: '查看完整参数',
+		download: '下载',
+		sources: '公开来源',
+		dataCardFields: {
+			id: 'Benchmark ID', status: '状态', capability: '评测能力', domain: '能力域', source: '任务来源',
+			judge: '评审方式', metric: '主指标', results: '公开结果', taskFamilies: '任务族', evidenceCoverage: '证据覆盖',
+		},
+		backHome: '返回 Lab 首页',
+	}
+	: {
+		back: 'All benchmarks',
+		sections: ['Leaderboard', 'Tasks & verification', 'Analysis', 'Data Card'],
+		status: 'Release status',
+		domain: 'Domain',
+		metric: 'Primary metric',
+		metricValue: 'Normalized mean / 100',
+		families: 'Total tasks',
+		models: 'Models evaluated',
+		leaderboard: 'Leaderboard',
+		leaderboardBody: 'The default view is the paper\'s primary metric: normalized mean score on 528 code-derivable tasks in the code-only condition. Every value shown comes from paper v1.',
+		preview: 'Paper-reported results. The 95% CIs use 10,000 task bootstrap resamples; task-level model and judge outputs are not in the public repository.',
+		search: 'Search models',
+		searchPlaceholder: 'Enter a model name',
+		filter: 'Evidence status',
+		filterAll: 'All results',
+		filterReviewed: 'Verified / reviewed',
+		filterPending: 'Pending review',
+		modelSelection: 'Model selection',
+		selectHint: 'Select a model',
+			chartView: 'Chart',
+			tableView: 'Table',
+			shareImage: 'Copy share image',
+			sharingImage: 'Generating…',
+			shareCopied: 'Copied — ready to paste',
+			shareDownloaded: 'PNG downloaded',
+			shareFailed: 'Export failed — try again',
+		metricControl: 'Metric',
+		sampleSize: 'Tasks',
+		confidence: '95% confidence interval',
+		higherBetter: 'Higher is better',
+		fullEvidence: 'Full',
+		partialEvidence: 'Partial',
+		rank: 'Rank',
+		visibleModels: 'Showing',
+		selected: 'Selected model',
+		score: 'Score',
+		evidence: 'Evidence',
+		noResults: 'No models match these filters.',
+		noLeaderboard: 'Leaderboard not public yet',
+			noLeaderboardBody: 'This Bench is listed in the catalog. Model results appear only after the owner submits run records and the version, protocol, and evidence checks pass.',
+		tasks: 'Tasks & Verification',
+		tasksBody: 'This section answers two questions: what the model receives, and how its answer is judged. The leaderboard above aggregates this Task × Verify contract.',
+		familyCount: 'capability task families',
+			taskCoverage: 'public tasks',
+		viewTree: 'View file tree',
+		publicExampleTag: 'Public example',
+		expected: 'Expected',
+		specimen: 'Representative task',
+		publicExample: 'From public task files',
+		context: 'Task context',
+		input: 'Task input',
+		assertions: 'Verify mechanism · Gold rubric',
+		assertionNote: 'The judge compares each model answer with the gold answer and rubric, scores Accuracy, Completeness, and Specificity from 0–5, then normalizes the result into the leaderboard above.',
+		noSpecimen: 'Real task specimens will be published after redaction and reviewability checks.',
+		analysis: 'Analysis',
+		analysisBody: 'Use score distribution and evidence coverage to show what current results support, and state what they cannot establish yet.',
+		spread: 'Top-to-bottom preview gap',
+		reviewCoverage: 'Verified or reviewed',
+		resultCount: 'Public model results',
+		distribution: 'Score distribution',
+		distributionBody: 'Models / score interval',
+		evidenceCoverage: 'Evidence coverage',
+		evidenceCoverageBody: 'Current result states',
+		whatSupports: 'What current evidence supports',
+		conditionResults: 'Three experimental conditions',
+		codeTaskSet: 'Code-derivable · 528 tasks',
+		docTaskSet: 'Doc-dependent · 100 tasks',
+		categoryResults: 'Primary-set category scores',
+		conditionLegend: 'Closed-book / Code-only / Documented',
+		findingOne: `The preview covers ${leaders.length} models with a ${spread.toFixed(1)}-point range, showing preliminary task-set discrimination.`,
+		findingTwo: `${reviewedCount} results are verified or reviewed. Repeated runs and confidence intervals remain necessary for formal comparison.`,
+		limitations: 'Limits and boundaries',
+			limitationsBody: `${asset.name} claims apply only to its published task set, execution protocol, and scoring rules. A catalog summary alone does not support model comparisons or capability conclusions.`,
+		pendingAnalysis: 'Score distribution, evidence coverage, and failure modes will appear after the first public results release.',
+		method: 'Data Card',
+		methodBody: 'A concise account of what the dataset measures, how it is verified and scored, and whether it can be reused. Exact run parameters live in the technical record.',
+		publicProfile: 'Public dataset record',
+		methodSummary: 'Construction & scoring',
+		methodSummaryBody: 'Four steps summarize how tasks are built, verified, and turned into leaderboard scores.',
+		evidenceBoundary: 'Evidence boundary',
+		technicalRecord: 'Reproduction & technical record',
+		technicalRecordBody: 'Pinned revisions, run configuration, confidence intervals, and evidence states for audit and exact reproduction.',
+		openTechnicalRecord: 'Open technical record',
+		closeTechnicalRecord: 'Close technical record',
+		openDataResource: 'Open data and reproduction',
+		protocol: [
+			['Scope', 'Define tasks, capability boundaries, constraints, and success criteria.'],
+			['Run', 'Execute models under controlled conditions and capture artifacts and traces.'],
+			['Judge', 'Score with fixed rules, automated checks, or a review protocol.'],
+			['Publish', 'Aggregate results, attach evidence, and record version changes.'],
+		],
+		trustRecords: [
+				['Task provenance', 'Pending confirmation', `The catalog lists ${asset.source}; a formal release still needs an owner-supplied version or immutable identifier.`],
+				['Execution protocol', 'Pending submission', 'Tools, time, network, resources, and model configuration must ship with formal results.'],
+			['Evidence coverage', leaders.length ? `${reviewedCount}/${leaders.length}` : 'Pending', 'Result status is tracked separately from raw run evidence so pending results are not presented as verified.'],
+				['Known limitations', 'Pending submission', 'The owner supplies limitations and applicability boundaries with the formal Data Card.'],
+		],
+		viewDetails: 'View details',
+		versionHistory: 'Version history',
+		viewFullRecord: 'View full record',
+			currentVersion: 'Pending release',
+			currentVersionBody: 'Catalog metadata is registered; tasks, protocol, results, and evidence await owner submission and review.',
+		dataCard: 'Technical Manifest',
+		dataCardBody: 'Complete machine-readable parameters, opened only when reproduction requires them.',
+		viewDataCard: 'View all parameters',
+		download: 'Download',
+		sources: 'Public sources',
+		dataCardFields: {
+			id: 'Benchmark ID', status: 'Status', capability: 'Capability', domain: 'Domain', source: 'Task source',
+			judge: 'Judge', metric: 'Primary metric', results: 'Public results', taskFamilies: 'Task families', evidenceCoverage: 'Evidence coverage',
+		},
+		backHome: 'Back to the Lab',
+	};
+
+const publicDataCard = researchEvidence?.publicDataCard ?? {
+	summary: asset.summary,
+	status: statuses[asset.status],
+	fields: [
+		{ label: copy.families, value: String((researchEvidence?.taskTotal ?? detail.families.length) || '—') },
+		{ label: copy.domain, value: categories[asset.category] },
+		{ label: copy.metric, value: leaders.length ? copy.metricValue : '—' },
+		{ label: copy.evidence, value: leaders.length ? `${reviewedCount}/${leaders.length}` : '—' },
+	],
+	boundary: copy.limitationsBody,
+};
+const publicSources = researchEvidence?.sources.filter((source) => source.role !== 'technical') ?? [];
+const methodRows = researchEvidence?.method ?? copy.protocol.map(([title, description]) => ({ title, description }));
+const evaluationContract = lang === 'zh'
+	? [
+		{ label: '01 / TASK', title: `${researchEvidence?.taskTotal ?? detail.families.length} 个真实仓库任务`, description: '528 个 code-derivable 主任务与 100 个 doc-dependent 诊断任务，来自 10 个固定 commit 的 Python 仓库。' },
+		{ label: '02 / VERIFY', title: 'GPT-5.4 · 三轴评分', description: '模型答案与 gold answer / rubric 对照，Accuracy、Completeness、Specificity 各 0–5 分。' },
+		{ label: '03 / SCORE', title: topScore === null ? '等待公开结果' : `${topScore.toFixed(1)} / 100 最高分`, description: scoreRange === null ? '完成验证后发布榜单。' : `主榜单统计 528 个 code-derivable 任务的 code-only 均分；当前 ${leaders.length} 个模型，范围 ${scoreRange}。`, href: '#leaderboard', action: '回看榜单' },
+	]
+	: [
+		{ label: '01 / TASK', title: `${researchEvidence?.taskTotal ?? detail.families.length} repository tasks`, description: '528 code-derivable primary tasks and 100 doc-dependent diagnostics across ten pinned Python repository commits.' },
+		{ label: '02 / VERIFY', title: 'GPT-5.4 · three-axis judge', description: 'Each answer is compared with the gold answer and rubric, then scored 0–5 on Accuracy, Completeness, and Specificity.' },
+		{ label: '03 / SCORE', title: topScore === null ? 'Results pending' : `${topScore.toFixed(1)} / 100 top score`, description: scoreRange === null ? 'The leaderboard appears after verification.' : `The primary leaderboard averages code-only scores over 528 code-derivable tasks; ${leaders.length} models currently span ${scoreRange}.`, href: '#leaderboard', action: 'Back to leaderboard' },
+	];
+---
+
+<BaseLayout
+	lang={lang}
+	alternatePath={`/bench/${asset.id}/`}
+	title={`${asset.name} - Lens Frontier`}
+	description={asset.summary}
+>
+	<article class="bench-page" data-bench-page>
+		<nav class="bench-page__nav" aria-label={`${asset.name} sections`}>
+			<div>
+				<a class="bench-page__identity" href="#overview">{asset.name}</a>
+				<a href="#leaderboard" data-section-link="leaderboard">{copy.sections[0]}</a>
+				<a href="#tasks" data-section-link="tasks">{copy.sections[1]}</a>
+				<a href="#analysis" data-section-link="analysis">{copy.sections[2]}</a>
+				<a href="#data-card" data-section-link="data-card">{copy.sections[3]}</a>
+			</div>
+		</nav>
+
+		<header id="overview" class="bench-hero">
+			<div class="bench-hero__copy">
+				<a href={allBenchmarksPath} class="bench-back">
+					<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M16 10H5m4-4-4 4 4 4" /></svg>
+					{copy.back}
+				</a>
+				<h1>{asset.name}</h1>
+				<p>{asset.summary}</p>
+			</div>
+			<dl class="bench-hero__facts">
+				<div><dt>{copy.status}</dt><dd class="is-accent">{statuses[asset.status]}</dd></div>
+				<div><dt>{copy.domain}</dt><dd>{categories[asset.category]}</dd></div>
+				<div><dt>{copy.families}</dt><dd>{(researchEvidence?.taskTotal ?? detail.families.length) || '—'}</dd></div>
+				<div><dt>{copy.models}</dt><dd>{leaders.length || '—'}</dd></div>
+				<div><dt>{copy.metric}</dt><dd>{leaders.length ? copy.metricValue : '—'}</dd></div>
+			</dl>
+		</header>
+
+		<section id="leaderboard" class="bench-section bench-leaderboard" data-bench-section aria-labelledby="bench-board-title">
+			<header class="bench-section__head">
+				<div><span>01</span><h2 id="bench-board-title">{copy.leaderboard}</h2></div>
+				<p>{copy.leaderboardBody}</p>
+			</header>
+
+			{leaders.length ? (
+				<div class="bench-scoreboard">
+						<div class="bench-scoreboard__main">
+							<div class="bench-scoreboard__viewbar">
+								<label>
+									<span>{copy.metricControl}</span>
+									<select aria-label={copy.metricControl}><option>{copy.metricValue}</option></select>
+								</label>
+							<div role="tablist" aria-label={copy.leaderboard}>
+								<button type="button" role="tab" aria-selected="true" class="is-active" data-board-view="chart">{copy.chartView}</button>
+								<button type="button" role="tab" aria-selected="false" data-board-view="table">{copy.tableView}</button>
+							</div>
+							<button type="button" class="bench-scoreboard__share" data-share-board>{copy.shareImage}</button>
+							</div>
+							<div class="bench-scoreboard__plot" data-board-panel="chart">
+								<div data-bench-chart role="img" aria-label={`${asset.name} ${copy.leaderboard}`}></div>
+								<footer><span>{copy.confidence}</span><i></i><span>{copy.higherBetter}</span></footer>
+							</div>
+							<div class="bench-scoreboard__table" data-board-panel="table" hidden>
+								<table>
+									<thead><tr><th>{copy.rank}</th><th>{copy.modelSelection}</th><th>{copy.score}</th><th>{copy.confidence}</th><th>{copy.sampleSize}</th><th>{copy.evidence}</th></tr></thead>
+									<tbody>{leaderPayload.map((leader) => <tr data-table-model={leader.model}><td>{leader.rank}</td><th><span class="bench-table-model">{leader.brand && <img src={leader.brand.icon} alt="" width="18" height="18" loading="lazy" aria-hidden="true" />}<span>{leader.model}{leader.modelId && <small>{leader.modelId}</small>}</span></span></th><td>{leader.score.toFixed(1)}</td><td>{leader.ciLow.toFixed(1)}–{leader.ciHigh.toFixed(1)}</td><td>{leader.sampleSize}</td><td><a href={leader.evidenceRef} target="_blank" rel="noreferrer">{leader.evidenceDepth === 'full' ? copy.fullEvidence : copy.partialEvidence} ↗</a></td></tr>)}</tbody>
+								</table>
+							</div>
+						</div>
+						<aside class="bench-models" aria-label={copy.modelSelection}>
+							<header>
+								<div><h3>{copy.modelSelection}</h3><span>{leaders.length}</span></div>
+							</header>
+							<div class="bench-model-list" role="list">
+								{leaderPayload.map((leader, index) => (
+									<button
+										type="button"
+										class:list={{ 'is-active': index === 0 }}
+										data-model-select={leader.model}
+										role="listitem"
+										aria-pressed={index === 0 ? 'true' : 'false'}
+									>
+										<span class:list={['bench-model-state', { 'is-active': index === 0 }]} aria-hidden="true"></span>
+										<strong class="bench-model-name">{leader.brand && <img src={leader.brand.icon} alt="" width="18" height="18" loading="lazy" aria-hidden="true" />}<span>{leader.model}</span></strong>
+										<small>{copy.selected}</small>
+									</button>
+								))}
+							</div>
+						</aside>
+					</div>
+			) : (
+				<div class="bench-empty"><strong>{copy.noLeaderboard}</strong><p>{copy.noLeaderboardBody}</p></div>
+			)}
+		</section>
+
+		<section id="tasks" class="bench-section bench-tasks" data-bench-section aria-labelledby="bench-tasks-title">
+			<header class="bench-section__head">
+				<div><span>02</span><h2 id="bench-tasks-title">{copy.tasks}</h2></div>
+				<p>{copy.tasksBody}</p>
+			</header>
+
+			{detail.families.length ? <div class="bench-family-coverage">
+				<p><strong>{researchEvidence?.taskTotal ?? detail.families.length}</strong> {copy.taskCoverage}</p>
+				<div class="bench-family-coverage__labels">
+					{detail.families.map((family) => (
+						<article><h3>{family.title}</h3><p>{family.count ?? '—'} tasks <span>{family.count ? `(${Math.round((family.count / (researchEvidence?.taskTotal ?? family.count)) * 100)}%)` : ''}</span></p></article>
+					))}
+				</div>
+				<div class="bench-family-coverage__bar" aria-hidden="true">{detail.families.map((family) => <i style={`--family-share:${((family.count ?? 1) / (researchEvidence?.taskTotal ?? detail.families.length)) * 100}%`}></i>)}</div>
+			</div> : <p class="bench-specimens__pending">{copy.noSpecimen}</p>}
+
+			<div class="bench-evaluation-contract" aria-label={copy.tasks}>
+				{evaluationContract.map((item) => (
+					<article>
+						<span>{item.label}</span>
+						<strong>{item.title}</strong>
+						<p>{item.description}</p>
+						{item.href && <a href={item.href}>{item.action}<span aria-hidden="true">↑</span></a>}
+					</article>
+				))}
+			</div>
+
+			{detail.specimens.length ? (
+				<div class="bench-task-workspace">
+					<div class="bench-specimens" data-task-specimens>
+						<header>
+							<div><strong>{copy.specimen}</strong><span>{copy.publicExample}</span></div>
+							<nav aria-label={copy.specimen}>
+								{detail.specimens.map((_specimen, index) => (
+									<button type="button" class:list={{ 'is-active': index === 0 }} data-task-tab={index} aria-pressed={index === 0 ? 'true' : 'false'}>
+										{String(index + 1).padStart(2, '0')}
+									</button>
+								))}
+							</nav>
+						</header>
+						{detail.specimens.map((specimen, index) => (
+							<article data-task-panel={index} hidden={index !== 0}>
+								<aside>
+								<h3>{displayCapability(specimen.capability)}</h3>
+									<dl>{specimen.context.map((item) => <div><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>
+					{specimen.repository && <><pre>{specimen.repository.tree.join('\n')}</pre><a href="#technical-record">{copy.viewTree} ({specimen.repository.fileCount})</a></>}
+								</aside>
+								<div class="bench-specimen__body">
+									<div class="bench-specimen__task">
+										<div><span>{copy.input}</span><b>{copy.publicExampleTag}</b></div>
+										<h3>{specimen.title}</h3>
+										<p>{specimen.input}</p>
+									</div>
+									<div class="bench-specimen__assertions">
+										<span>{copy.assertions}</span>
+										<ol>{specimen.assertions.map((assertion, assertionIndex) => <li><b>{assertionIndex + 1}</b><span>{assertion}</span>{specimen.expected?.[assertionIndex] && <em>✓ {copy.expected}: {specimen.expected[assertionIndex]}</em>}</li>)}</ol>
+										<p>{copy.assertionNote}</p>
+									</div>
+								</div>
+							</article>
+						))}
+					</div>
+				</div>
+				) : detail.families.length ? (
+					<p class="bench-specimens__pending">{copy.noSpecimen}</p>
+				) : null}
+		</section>
+
+		<section id="analysis" class="bench-section bench-analysis" data-bench-section aria-labelledby="bench-analysis-title">
+			<header class="bench-section__head">
+				<div><span>03</span><h2 id="bench-analysis-title">{copy.analysis}</h2></div>
+				<p>{copy.analysisBody}</p>
+			</header>
+
+			{researchEvidence ? (
+				<div class="bench-analysis-suite">
+					<article class="bench-analysis-suite__families bench-analysis-suite__conditions">
+						<header><h3>{copy.conditionResults}</h3><p>{copy.codeTaskSet}</p></header>
+						<div data-condition-chart="code-derivable" role="img" aria-label={`${copy.conditionResults} · ${copy.codeTaskSet}`}></div>
+						<footer>{copy.conditionLegend}. {copy.higherBetter}.</footer>
+					</article>
+					<article class="bench-analysis-suite__failures bench-analysis-suite__conditions">
+						<header><h3>{copy.conditionResults}</h3><p>{copy.docTaskSet}</p></header>
+						<div data-condition-chart="doc-dependent" role="img" aria-label={`${copy.conditionResults} · ${copy.docTaskSet}`}></div>
+						<footer>{copy.conditionLegend}. {copy.higherBetter}.</footer>
+					</article>
+					<article class="bench-analysis-suite__categories">
+						<header><h3>{copy.categoryResults}</h3><p>{copy.codeTaskSet}</p></header>
+						<div data-category-chart role="img" aria-label={copy.categoryResults}></div>
+						<footer>{lang === 'zh' ? '论文表 8，四个模型汇总。' : 'Paper Table 8, pooled across four models.'}</footer>
+					</article>
+					<aside class="bench-analysis-suite__reading">
+						<div><h3>{copy.whatSupports}</h3><ul>{researchEvidence.findings.map((finding) => <li>{finding}</li>)}</ul></div>
+						<div><h3>{copy.limitations}</h3><ul>{researchEvidence.limitations.map((limitation) => <li>{limitation}</li>)}</ul></div>
+					</aside>
+				</div>
+			) : leaders.length ? (
+				<>
+					<div class="bench-analysis__stats">
+						<div><strong>{spread.toFixed(1)}</strong><span>{copy.spread}</span></div>
+						<div><strong>{reviewedCount}/{leaders.length}</strong><span>{copy.reviewCoverage}</span></div>
+						<div><strong>{leaders.length}</strong><span>{copy.resultCount}</span></div>
+					</div>
+					<div class="bench-analysis__charts">
+						<article><header><h3>{copy.distribution}</h3><p>{copy.distributionBody}</p></header><div data-distribution-chart role="img" aria-label={copy.distribution}></div></article>
+						<article><header><h3>{copy.evidenceCoverage}</h3><p>{copy.evidenceCoverageBody}</p></header><div data-evidence-chart role="img" aria-label={copy.evidenceCoverage}></div></article>
+					</div>
+					<div class="bench-analysis__reading">
+						<article><span>{copy.whatSupports}</span><p>{copy.findingOne}</p><p>{copy.findingTwo}</p></article>
+						<aside><span>{copy.limitations}</span><p>{copy.limitationsBody}</p></aside>
+					</div>
+				</>
+			) : (
+				<div class="bench-analysis__pending"><p>{copy.pendingAnalysis}</p><aside><span>{copy.limitations}</span><p>{copy.limitationsBody}</p></aside></div>
+			)}
+		</section>
+
+		<section id="data-card" class="bench-section bench-method" data-bench-section aria-labelledby="bench-method-title">
+			<header class="bench-section__head">
+				<div><span>04</span><h2 id="bench-method-title">{copy.method}</h2></div>
+				<p>{copy.methodBody}</p>
+			</header>
+
+			<article class="bench-public-card" aria-labelledby="bench-public-card-title">
+				<header class="bench-public-card__header">
+					<div>
+						<span>{copy.publicProfile}</span>
+						<h3 id="bench-public-card-title">{asset.name}</h3>
+						<p>{publicDataCard.summary}</p>
+					</div>
+					<strong class:list={{ 'is-limited': publicDataCard.statusTone === 'limited' }}><i aria-hidden="true"></i>{publicDataCard.status}</strong>
+				</header>
+
+				<div class="bench-public-card__content">
+					<div class="bench-public-card__sources">
+						<span>{copy.sources}</span>
+						<nav aria-label={copy.sources}>
+							{publicSources.map((source) => <a href={source.href} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">↗</span></a>)}
+						</nav>
+					</div>
+					<dl>
+						{publicDataCard.fields.map((field) => (
+							<div><dt>{field.label}</dt><dd>{field.value}</dd>{field.note && <p>{field.note}</p>}</div>
+						))}
+					</dl>
+				</div>
+
+				<footer>
+					<strong>{copy.evidenceBoundary}</strong>
+					<p>{publicDataCard.boundary}</p>
+					<a href={dataPagePath}>{copy.openDataResource}<span aria-hidden="true">↗</span></a>
+				</footer>
+			</article>
+
+			<div class="bench-method-summary">
+				<header><strong>{copy.methodSummary}</strong><p>{copy.methodSummaryBody}</p></header>
+				<ol class="bench-protocol">
+					{methodRows.map((record, index) => (
+						<li><span>{index + 1}</span><div><h3>{record.title}</h3><p>{record.description}</p></div></li>
+					))}
+				</ol>
+			</div>
+
+			<div class="bench-method__actions">
+				<a href={homePath}>{copy.backHome}<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg></a>
+				<a href={allBenchmarksPath}>{copy.back}<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 10h11m-4-4 4 4-4 4" /></svg></a>
+			</div>
+		</section>
+
+		<script is:inline type="application/json" id="bench-result-data" set:html={JSON.stringify(leaderPayload)}></script>
+		<script is:inline type="application/json" id="bench-evidence-data" set:html={JSON.stringify(researchEvidence ? { ...researchEvidence, familyLabels: detail.families.map((family) => family.title) } : null)}></script>
+		<script is:inline type="application/json" id="bench-chart-copy" set:html={JSON.stringify({
+			score: copy.score,
+			metric: copy.metricValue,
+			confidence: copy.confidence,
+			sampleSize: copy.sampleSize,
+			evidence: copy.evidence,
+			verified: evidence.verified,
+			reviewed: evidence.reviewed,
+			pending: evidence.pending,
+			tableView: copy.tableView,
+			leaderboard: copy.leaderboard,
+			models: copy.models,
+			previewNote: copy.preview,
+			shareImage: copy.shareImage,
+			sharingImage: copy.sharingImage,
+			shareCopied: copy.shareCopied,
+			shareDownloaded: copy.shareDownloaded,
+			shareFailed: copy.shareFailed,
+			preview: copy.currentVersion,
+		})}></script>
+	</article>
+
+	<script>
+		import * as echarts from 'echarts/core';
+		import { BarChart, CustomChart } from 'echarts/charts';
+		import { DataZoomComponent, GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
+		import { CanvasRenderer } from 'echarts/renderers';
+		import { chartTheme } from '../../../scripts/chartTheme';
+		import { copyOrDownloadSnapshot, createShareSnapshot } from '../../../scripts/shareSnapshot';
+
+		echarts.use([BarChart, CustomChart, DataZoomComponent, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer]);
+
+		const root = document.querySelector<HTMLElement>('[data-bench-page]');
+		const leaders = JSON.parse(document.querySelector('#bench-result-data')?.textContent || '[]');
+		const evidenceData = JSON.parse(document.querySelector('#bench-evidence-data')?.textContent || 'null');
+		const chartCopy = JSON.parse(document.querySelector('#bench-chart-copy')?.textContent || '{}');
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		if (root) {
+			const sectionLinks = [...root.querySelectorAll<HTMLAnchorElement>('[data-section-link]')];
+			const sections = [...root.querySelectorAll<HTMLElement>('[data-bench-section]')];
+			const setActiveSection = (id: string) => sectionLinks.forEach((link) => {
+				const active = link.dataset.sectionLink === id;
+				link.classList.toggle('is-active', active);
+				active ? link.setAttribute('aria-current', 'location') : link.removeAttribute('aria-current');
+				if (active && window.innerWidth < 760) {
+					link.scrollIntoView({
+						behavior: reducedMotion ? 'auto' : 'smooth',
+						block: 'nearest',
+						inline: 'center',
+					});
+				}
+			});
+			const sectionObserver = new IntersectionObserver((entries) => {
+				const visible = entries.filter((entry) => entry.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+				if (visible?.target.id) setActiveSection(visible.target.id);
+			}, { rootMargin: '-121px 0px -58% 0px', threshold: [0, 0.1, 0.25] });
+			sections.forEach((section) => sectionObserver.observe(section));
+			setActiveSection(location.hash.slice(1) || 'leaderboard');
+
+			const boardTabs = [...root.querySelectorAll<HTMLButtonElement>('[data-board-view]')];
+			const boardPanels = [...root.querySelectorAll<HTMLElement>('[data-board-panel]')];
+			boardTabs.forEach((tab) => tab.addEventListener('click', () => {
+				const selected = tab.dataset.boardView;
+				boardTabs.forEach((item) => {
+					const active = item.dataset.boardView === selected;
+					item.classList.toggle('is-active', active);
+					item.setAttribute('aria-selected', active ? 'true' : 'false');
+				});
+				boardPanels.forEach((panel) => { panel.hidden = panel.dataset.boardPanel !== selected; });
+				window.dispatchEvent(new Event('resize'));
+			}));
+
+			const taskTabs = [...root.querySelectorAll<HTMLButtonElement>('[data-task-tab]')];
+			const taskPanels = [...root.querySelectorAll<HTMLElement>('[data-task-panel]')];
+			taskTabs.forEach((tab) => tab.addEventListener('click', () => {
+				const selected = Number(tab.dataset.taskTab || 0);
+				taskTabs.forEach((item, index) => {
+					const active = index === selected;
+					item.classList.toggle('is-active', active);
+					item.setAttribute('aria-pressed', active ? 'true' : 'false');
+				});
+				taskPanels.forEach((panel, index) => { panel.hidden = index !== selected; });
+			}));
+
+		}
+
+		if (root && leaders.length) {
+			const chartNode = root.querySelector<HTMLElement>('[data-bench-chart]');
+			const distributionNode = root.querySelector<HTMLElement>('[data-distribution-chart]');
+			const evidenceNode = root.querySelector<HTMLElement>('[data-evidence-chart]');
+			const conditionNodes = [...root.querySelectorAll<HTMLElement>('[data-condition-chart]')];
+			const categoryNode = root.querySelector<HTMLElement>('[data-category-chart]');
+			const modelButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-model-select]')];
+			const modelTableRows = [...root.querySelectorAll<HTMLTableRowElement>('[data-table-model]')];
+			const shareBoardButton = root.querySelector<HTMLButtonElement>('[data-share-board]');
+			const chart = chartNode ? echarts.init(chartNode) : null;
+			const distributionChart = distributionNode ? echarts.init(distributionNode) : null;
+			const evidenceChart = evidenceNode ? echarts.init(evidenceNode) : null;
+			const conditionCharts = conditionNodes.map((node) => ({ node, chart: echarts.init(node) }));
+			const categoryChart = categoryNode ? echarts.init(categoryNode) : null;
+			let activeModel = leaders[0]?.model ?? '';
+			let visibleLeaders = [...leaders];
+
+			const safeFilename = (value: string) => value
+				.toLowerCase()
+				.replace(/[^a-z0-9\u4e00-\u9fff]+/g, '-')
+				.replace(/^-+|-+$/g, '')
+				.slice(0, 80) || 'benchmark';
+
+			const wrapModel = (model: string) => {
+				if (model.length < 12) return model;
+				const parts = model.split(' ');
+				return parts.length > 1 ? `${parts.slice(0, Math.ceil(parts.length / 2)).join(' ')}\n${parts.slice(Math.ceil(parts.length / 2)).join(' ')}` : model;
+			};
+
+			const leaderboardOption = (): any => {
+				const theme = chartTheme();
+				const phone = window.innerWidth < 640;
+				const narrow = window.innerWidth < 1024;
+				const visibleMax = phone ? 3 : narrow ? 6 : 10;
+				const hasZoom = visibleLeaders.length > visibleMax;
+				const zoomEnd = visibleLeaders.length > 1 ? Math.min(100, ((visibleMax - 1) / (visibleLeaders.length - 1)) * 100) : 100;
+				return {
+					animationDuration: reducedMotion ? 0 : 620,
+					animationDurationUpdate: reducedMotion ? 0 : 480,
+					animationEasing: 'cubicOut',
+					grid: { left: narrow ? 46 : 56, right: 20, top: 48, bottom: hasZoom ? 124 : 92 },
+					tooltip: {
+						trigger: 'item', backgroundColor: theme.tooltip, borderWidth: 0, padding: [10, 12],
+						textStyle: { color: theme.tooltipInk, fontSize: 12 },
+						formatter: (params: any) => {
+							const meta = params.data.meta;
+							const brand = meta.brand?.icon ? `<img src="${meta.brand.icon}" alt="" width="18" height="18" style="display:block;flex:0 0 auto;background:#fff;border-radius:3px;padding:2px" />` : '';
+							return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">${brand}<strong>${meta.model}</strong></div>${chartCopy.score} ${meta.score.toFixed(1)}<br>${chartCopy.confidence} ${meta.ciLow.toFixed(1)}–${meta.ciHigh.toFixed(1)}<br>${chartCopy.sampleSize} ${meta.sampleSize}<br>${chartCopy.evidence} ${meta.evidenceDepth}`;
+						},
+					},
+					dataZoom: hasZoom ? [
+						{ type: 'inside', xAxisIndex: 0, start: 0, end: zoomEnd, zoomOnMouseWheel: 'shift', moveOnMouseMove: true },
+						{ type: 'slider', xAxisIndex: 0, start: 0, end: zoomEnd, bottom: 8, height: 6, showDetail: false, brushSelect: false, borderColor: theme.line, backgroundColor: theme.surfaceSoft, fillerColor: theme.accentSoft, handleStyle: { color: theme.surface, borderColor: theme.accent } },
+					] : [],
+					xAxis: {
+						type: 'category', data: visibleLeaders.map((leader: any) => leader.model), axisTick: { show: false },
+						axisLine: { lineStyle: { color: theme.axis } },
+						axisLabel: { interval: 0, color: theme.muted, fontSize: narrow ? 10 : 11, lineHeight: 15, margin: 13, formatter: wrapModel },
+					},
+					yAxis: {
+						type: 'value', min: 0, max: 100, interval: 20, name: chartCopy.metric, nameGap: 12,
+						nameTextStyle: { color: theme.faint, fontSize: 11, align: 'left' }, axisTick: { show: false }, axisLine: { show: true, lineStyle: { color: theme.axis } },
+						axisLabel: { color: theme.faint, fontSize: 11 }, splitLine: { lineStyle: { color: theme.grid } },
+					},
+					series: [
+						{
+							type: 'bar', barMaxWidth: narrow ? 28 : 44,
+							label: { show: true, position: 'top', distance: 18, fontSize: 12, fontWeight: 650, formatter: ({ value }: any) => Number(value).toFixed(1) },
+							data: visibleLeaders.map((leader: any) => ({ value: leader.score, meta: leader, itemStyle: { color: leader.model === activeModel ? theme.accent : theme.inactive }, label: { color: leader.model === activeModel ? theme.accent : theme.ink } })),
+							emphasis: { itemStyle: { color: theme.accent } },
+						},
+						{
+							type: 'custom', silent: true, z: 10,
+							renderItem: (_params: any, api: any) => {
+								const x = api.value(0); const low = api.coord([x, api.value(1)]); const high = api.coord([x, api.value(2)]); const cap = 6;
+								return { type: 'group', children: [
+									{ type: 'line', shape: { x1: low[0], y1: low[1], x2: high[0], y2: high[1] }, style: { stroke: theme.ink, lineWidth: 1 } },
+									{ type: 'line', shape: { x1: low[0] - cap, y1: low[1], x2: low[0] + cap, y2: low[1] }, style: { stroke: theme.ink, lineWidth: 1 } },
+									{ type: 'line', shape: { x1: high[0] - cap, y1: high[1], x2: high[0] + cap, y2: high[1] }, style: { stroke: theme.ink, lineWidth: 1 } },
+								] };
+							},
+							data: visibleLeaders.map((leader: any, index: number) => [index, leader.ciLow, leader.ciHigh]),
+						},
+					],
+				};
+			};
+
+			const distributionOption = () => {
+				const theme = chartTheme();
+				const currentScores = visibleLeaders.map((leader: any) => leader.score);
+				const lowest = currentScores.length ? Math.min(...currentScores) : 0;
+				const highest = currentScores.length ? Math.max(...currentScores) : 0;
+				const binWidth = Math.max(10, Math.ceil(((highest - lowest) + 1) / 50) * 10);
+				const firstBin = Math.floor(lowest / binWidth) * binWidth;
+				const lastBin = Math.floor(highest / binWidth) * binWidth;
+				const binCount = Math.max(1, Math.round((lastBin - firstBin) / binWidth) + 1);
+				const bins = Array.from({ length: binCount }, (_, index) => firstBin + (index * binWidth));
+				const counts = bins.map((start) => visibleLeaders.filter((leader: any) => leader.score >= start && leader.score < start + binWidth).length);
+				return {
+					animationDuration: reducedMotion ? 0 : 480,
+					grid: { left: 34, right: 12, top: 18, bottom: 32 },
+					tooltip: { trigger: 'axis', backgroundColor: theme.tooltip, borderWidth: 0, textStyle: { color: theme.tooltipInk, fontSize: 12 } },
+					xAxis: { type: 'category', data: bins.map((start) => `${start}–${start + binWidth - 1}`), axisTick: { show: false }, axisLine: { lineStyle: { color: theme.axis } }, axisLabel: { color: theme.faint, fontSize: 11 } },
+					yAxis: { type: 'value', minInterval: 1, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: theme.faint, fontSize: 11 }, splitLine: { lineStyle: { color: theme.grid } } },
+					series: [{ type: 'bar', data: counts, barMaxWidth: 42, itemStyle: { color: theme.accent }, label: { show: true, position: 'top', color: theme.ink, fontSize: 12 } }],
+				};
+			};
+
+			const evidenceOption = () => {
+				const theme = chartTheme();
+				const count = (key: string) => visibleLeaders.filter((leader: any) => leader.evidenceKey === key).length;
+				const total = Math.max(1, visibleLeaders.length);
+				return {
+					animationDuration: reducedMotion ? 0 : 480,
+					grid: { left: 8, right: 8, top: 46, bottom: 34 },
+					tooltip: { trigger: 'item', backgroundColor: theme.tooltip, borderWidth: 0, textStyle: { color: theme.tooltipInk, fontSize: 12 } },
+					xAxis: { type: 'value', max: total, show: false },
+					yAxis: { type: 'category', data: [''], show: false },
+					series: [
+						{ name: chartCopy.verified, type: 'bar', stack: 'evidence', data: [count('verified')], barWidth: 28, itemStyle: { color: theme.accent }, label: { show: count('verified') > 0, position: 'inside', color: '#fff', formatter: `${chartCopy.verified}  ${count('verified')}` } },
+						{ name: chartCopy.reviewed, type: 'bar', stack: 'evidence', data: [count('reviewed')], barWidth: 28, itemStyle: { color: '#8ba2cf' }, label: { show: count('reviewed') > 0, position: 'inside', color: '#fff', formatter: `${chartCopy.reviewed}  ${count('reviewed')}` } },
+						{ name: chartCopy.pending, type: 'bar', stack: 'evidence', data: [count('pending')], barWidth: 28, itemStyle: { color: theme.inactive }, label: { show: count('pending') > 0, position: 'inside', color: theme.ink, formatter: `${chartCopy.pending}  ${count('pending')}` } },
+					],
+				};
+			};
+
+			const comparisonOption = (taskSet: string) => {
+				const theme = chartTheme();
+				const rows = (evidenceData?.conditionScores ?? []).filter((row: any) => row.taskSet === taskSet);
+				return ({
+				animationDuration: reducedMotion ? 0 : 540,
+				color: theme.palette.slice(0, 3),
+				legend: { top: 0, left: 0, itemWidth: 10, itemHeight: 10, textStyle: { color: theme.muted, fontSize: 11 } },
+				grid: { left: 44, right: 12, top: 48, bottom: 60 },
+				tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: theme.tooltip, borderWidth: 0, textStyle: { color: theme.tooltipInk, fontSize: 12 } },
+				xAxis: { type: 'category', data: rows.map((row: any) => wrapModel(row.model)), axisTick: { show: false }, axisLine: { lineStyle: { color: theme.axis } }, axisLabel: { color: theme.muted, fontSize: 10, lineHeight: 14, interval: 0 } },
+				yAxis: { type: 'value', min: 0, max: 100, interval: 25, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: theme.faint, fontSize: 11 }, splitLine: { lineStyle: { color: theme.grid, type: 'dashed' } } },
+				series: [
+					{ name: 'Closed-book', key: 'closedBook' },
+					{ name: 'Code-only', key: 'codeOnly' },
+					{ name: 'Documented', key: 'documented' },
+				].map((series) => ({ name: series.name, type: 'bar', data: rows.map((row: any) => row[series.key]), barMaxWidth: 18, label: { show: true, position: 'top', color: theme.ink, fontSize: 10, formatter: ({ value }: any) => Number(value).toFixed(1) } })),
+			})};
+
+			const categoryOption = () => {
+				const theme = chartTheme();
+				const rows = evidenceData?.categoryScores ?? [];
+				return ({
+				animationDuration: reducedMotion ? 0 : 540,
+				color: theme.palette.slice(0, 3),
+				legend: { top: 0, left: 0, itemWidth: 10, itemHeight: 10, textStyle: { color: theme.muted, fontSize: 11 } },
+				grid: { left: 44, right: 12, top: 48, bottom: 42 },
+				tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, backgroundColor: theme.tooltip, borderWidth: 0, textStyle: { color: theme.tooltipInk, fontSize: 12 } },
+				xAxis: { type: 'category', data: rows.map((row: any) => row.category), axisTick: { show: false }, axisLine: { lineStyle: { color: theme.axis } }, axisLabel: { color: theme.muted, fontSize: 11 } },
+				yAxis: { type: 'value', min: 0, max: 100, interval: 25, axisTick: { show: false }, axisLine: { show: false }, axisLabel: { color: theme.faint, fontSize: 11 }, splitLine: { lineStyle: { color: theme.grid, type: 'dashed' } } },
+				series: [
+					{ name: 'Closed-book', key: 'closedBook' },
+					{ name: 'Code-only', key: 'codeOnly' },
+					{ name: 'Documented', key: 'documented' },
+				].map((series) => ({ name: series.name, type: 'bar', data: rows.map((row: any) => row[series.key]), barMaxWidth: 22, label: { show: true, position: 'top', color: theme.ink, fontSize: 10, formatter: ({ value }: any) => Number(value).toFixed(1) } })),
+			})};
+
+			const setActiveModel = (model: string) => {
+				const leader = leaders.find((item: any) => item.model === model);
+				if (!leader) return;
+				activeModel = model;
+				modelButtons.forEach((button) => {
+					const active = button.dataset.modelSelect === model;
+					button.classList.toggle('is-active', active);
+					button.setAttribute('aria-pressed', active ? 'true' : 'false');
+				});
+				modelTableRows.forEach((row) => row.classList.toggle('is-active', row.dataset.tableModel === model));
+					chart?.setOption(leaderboardOption(), { replaceMerge: ['series'] });
+				};
+
+				const applyFilters = () => {
+					visibleLeaders = [...leaders];
+				chart?.setOption(leaderboardOption(), { notMerge: true });
+				distributionChart?.setOption(distributionOption(), { notMerge: true });
+				evidenceChart?.setOption(evidenceOption(), { notMerge: true });
+				conditionCharts.forEach(({ node, chart }) => chart.setOption(comparisonOption(node.dataset.conditionChart || 'code-derivable'), { notMerge: true }));
+				categoryChart?.setOption(categoryOption(), { notMerge: true });
+				if (visibleLeaders.length) setActiveModel(activeModel);
+			};
+
+				modelButtons.forEach((button) => button.addEventListener('click', () => setActiveModel(button.dataset.modelSelect || '')));
+			chart?.on('click', (params: any) => { if (params.data?.meta?.model) setActiveModel(params.data.meta.model); });
+			window.addEventListener('lens-frontier-theme-change', applyFilters);
+
+			shareBoardButton?.addEventListener('click', async () => {
+				if (!chart) return;
+				const idleLabel = chartCopy.shareImage || 'Copy share image';
+				shareBoardButton.disabled = true;
+				shareBoardButton.textContent = chartCopy.sharingImage || 'Generating…';
+				try {
+					const exportTheme = chartTheme();
+					const snapshotTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+					const benchmarkName = root.querySelector('h1')?.textContent?.trim() || 'Benchmark';
+					const benchmarkSummary = root.querySelector<HTMLElement>('.bench-hero__copy > p')?.textContent?.trim() || '';
+					const selectedView = root.querySelector<HTMLButtonElement>('[data-board-view][aria-selected="true"]')?.dataset.boardView || 'chart';
+					const table = root.querySelector<HTMLTableElement>('.bench-scoreboard__table table');
+					const tableSnapshot = selectedView === 'table' && table ? {
+						headers: [...table.querySelectorAll('thead th')].map((cell) => cell.textContent?.trim() || ''),
+						rows: [...table.querySelectorAll('tbody tr')].map((row) => [...row.querySelectorAll('th, td')].map((cell) => cell.textContent?.trim().replace(/\s+/g, ' ') || '')),
+					} : undefined;
+					const chartDataUrl = selectedView === 'chart' ? chart.getDataURL({
+						type: 'png',
+						pixelRatio: 2,
+						backgroundColor: exportTheme.surface,
+					}) : undefined;
+					const blob = await createShareSnapshot({
+						title: `${benchmarkName} · ${selectedView === 'table' ? chartCopy.tableView : chartCopy.leaderboard}`,
+						subtitle: benchmarkSummary,
+						meta: [`${visibleLeaders.length} ${chartCopy.models}`, chartCopy.metric, chartCopy.previewNote],
+						chartDataUrl,
+						table: tableSnapshot,
+						sourceUrl: window.location.href,
+						statusLabel: chartCopy.preview || 'PUBLIC PREVIEW',
+						theme: snapshotTheme,
+					});
+					const result = await copyOrDownloadSnapshot(blob, `lens-frontier-${safeFilename(benchmarkName)}-${selectedView}.png`);
+					shareBoardButton.textContent = result === 'copied' ? chartCopy.shareCopied : chartCopy.shareDownloaded;
+				} catch (error) {
+					console.error('Unable to export benchmark snapshot.', error);
+					shareBoardButton.textContent = chartCopy.shareFailed || 'Export failed';
+				} finally {
+					shareBoardButton.disabled = false;
+					window.setTimeout(() => { shareBoardButton.textContent = idleLabel; }, 2400);
+				}
+			});
+			applyFilters();
+
+			const nodes = [chartNode, distributionNode, evidenceNode, categoryNode, ...conditionNodes].filter(Boolean) as HTMLElement[];
+			const leaderboardLayoutKey = () => window.innerWidth < 640 ? 'phone' : window.innerWidth < 1024 ? 'tablet' : 'desktop';
+			let activeLayoutKey = leaderboardLayoutKey();
+			const resize = () => {
+				chart?.resize();
+				distributionChart?.resize();
+				evidenceChart?.resize();
+				conditionCharts.forEach(({ chart }) => chart.resize());
+				categoryChart?.resize();
+				const nextLayoutKey = leaderboardLayoutKey();
+				if (nextLayoutKey !== activeLayoutKey) {
+					activeLayoutKey = nextLayoutKey;
+					chart?.setOption(leaderboardOption(), { notMerge: true });
+				}
+			};
+			const observer = new ResizeObserver(resize);
+			nodes.forEach((node) => observer.observe(node));
+			window.addEventListener('resize', resize, { passive: true });
+		}
+	</script>
+</BaseLayout>

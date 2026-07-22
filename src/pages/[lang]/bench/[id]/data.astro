@@ -1,0 +1,230 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import '../../../../styles/benchmark-data.css';
+import { benchmarkCatalog, type CatalogAsset } from '../../../../lib/benchmarkData';
+import { benchmarkDetailContent, benchmarkEvidenceContent } from '../../../../lib/benchmarkDetailData';
+import { languageFrom, languages, localizedPath, type Language } from '../../../../lib/site';
+
+export function getStaticPaths() {
+	return languages.flatMap((lang) =>
+		benchmarkCatalog(lang)
+			.filter((asset) => Boolean(benchmarkEvidenceContent(asset.id, lang)))
+			.map((asset) => ({
+				params: { lang, id: asset.id },
+				props: { lang, asset },
+			})),
+	);
+}
+
+const { asset } = Astro.props as { lang: Language; asset: CatalogAsset };
+const lang = languageFrom(Astro.props.lang);
+const evidence = benchmarkEvidenceContent(asset.id, lang)!;
+const detail = benchmarkDetailContent(asset.id, lang);
+const benchmarkPath = localizedPath(lang, `/bench/${asset.id}/`);
+const libraryPath = localizedPath(lang, '/benchmarks/');
+const primaryDownload = evidence.dataset.downloads.find((item) => item.primary) ?? evidence.dataset.downloads[0];
+const licenseField = evidence.publicDataCard.fields.find((field) => /许可|license/i.test(field.label));
+
+const copy = lang === 'zh'
+	? {
+		pageTitle: `${asset.name} 数据与复现`,
+		kicker: 'Data resource',
+		title: `${asset.name} 数据与复现`,
+		intro: '查看真实任务、字段结构和发布版本；下载数据后，可使用公开评测框架重新运行模型并生成自己的结果。',
+		back: '返回完整 Benchmark',
+		all: '全部 Benchmarks',
+		downloadSnapshot: '下载代码与任务快照',
+		viewRepository: '查看 GitHub 仓库',
+		facts: ['公开任务', '任务文件', '数据格式', '复现状态'],
+		partial: '部分可复现',
+		partialNote: '任务与框架已公开；论文逐任务输出和 Judge 记录尚未公开。',
+		nav: ['下载', '任务预览', '字段结构', '复现', '证据与版本'],
+		downloads: '下载数据',
+		downloadsBody: '所有文件均来自固定仓库提交。页面不重新打包或修改任务内容。',
+		openDownload: '打开 / 下载',
+		preview: '任务预览',
+		previewBody: '以下样例来自公开任务文件，用于理解输入、参考答案范围和 Verify rubric。',
+		taskInput: 'Question',
+		context: '任务上下文',
+		verify: 'Verify rubric',
+		schema: '字段结构',
+		schemaBody: '主任务集和诊断任务集使用同一套核心 JSON 字段。',
+		field: '字段',
+		type: '类型',
+		required: '要求',
+		description: '说明',
+		yes: '必填',
+		no: '可选',
+		reproduce: '复现评测',
+		reproduceBody: '命令来自仓库 README。重新运行需要模型 API 和 Judge API 凭证，结果可能随模型端点版本变化。',
+		copyCommand: '复制命令',
+		copied: '已复制',
+		evidence: '证据与版本',
+		evidenceBody: '明确区分可检查的数据、论文报告结果和尚未发布的运行级证据。',
+		versions: '版本记录',
+		license: 'License',
+		boundary: '当前复现边界',
+	}
+	: {
+		pageTitle: `${asset.name} data and reproduction`,
+		kicker: 'Data resource',
+		title: `${asset.name} data and reproduction`,
+		intro: 'Inspect real tasks, schema, and release versions. Download the data, run a model with the public evaluation framework, and generate your own results.',
+		back: 'Back to full benchmark',
+		all: 'All benchmarks',
+		downloadSnapshot: 'Download code and task snapshot',
+		viewRepository: 'View GitHub repository',
+		facts: ['Public tasks', 'Task files', 'Data format', 'Reproduction status'],
+		partial: 'Partially reproducible',
+		partialNote: 'Tasks and framework are public; paper run outputs and judge records are not.',
+		nav: ['Downloads', 'Task preview', 'Schema', 'Reproduce', 'Evidence & versions'],
+		downloads: 'Download data',
+		downloadsBody: 'Every file comes from the pinned repository commit. This page does not repackage or modify task content.',
+		openDownload: 'Open / download',
+		preview: 'Task preview',
+		previewBody: 'These specimens come from the public task files and expose the input, answer scope, and verification rubric.',
+		taskInput: 'Question',
+		context: 'Task context',
+		verify: 'Verification rubric',
+		schema: 'Dataset schema',
+		schemaBody: 'The primary and diagnostic task sets share the same core JSON fields.',
+		field: 'Field',
+		type: 'Type',
+		required: 'Requirement',
+		description: 'Description',
+		yes: 'Required',
+		no: 'Optional',
+		reproduce: 'Reproduce the evaluation',
+		reproduceBody: 'Commands come from the repository README. Reruns require model and judge API credentials, and results may vary with endpoint versions.',
+		copyCommand: 'Copy command',
+		copied: 'Copied',
+		evidence: 'Evidence and versions',
+		evidenceBody: 'Separates inspectable data, paper-reported results, and run-level evidence that is not yet public.',
+		versions: 'Version history',
+		license: 'License',
+		boundary: 'Current reproduction boundary',
+	};
+---
+
+<BaseLayout
+	lang={lang}
+	title={copy.pageTitle}
+	description={evidence.publicDataCard.summary}
+	alternatePath={`/bench/${asset.id}/data/`}
+>
+	<article class="dataset-page" data-dataset-page>
+		<nav class="dataset-breadcrumb" aria-label={lang === 'zh' ? '面包屑导航' : 'Breadcrumb'}>
+			<a href={libraryPath}>{copy.all}</a><span>/</span><a href={benchmarkPath}>{asset.name}</a><span>/</span><strong>Data Card</strong>
+		</nav>
+
+		<header class="dataset-hero">
+			<div class="dataset-hero__copy">
+				<span>{copy.kicker}</span>
+				<h1>{copy.title}</h1>
+				<p>{copy.intro}</p>
+				<div class="dataset-hero__actions">
+					{primaryDownload && <a class="is-primary" href={primaryDownload.href}>{copy.downloadSnapshot}<span aria-hidden="true">↓</span></a>}
+					<a href={evidence.sources.find((source) => /GitHub|仓库|repository/i.test(source.label))?.href ?? benchmarkPath} target="_blank" rel="noreferrer">{copy.viewRepository}<span aria-hidden="true">↗</span></a>
+				</div>
+			</div>
+			<dl class="dataset-hero__facts">
+				<div><dt>{copy.facts[0]}</dt><dd>{evidence.taskTotal}</dd></div>
+				<div><dt>{copy.facts[1]}</dt><dd>{evidence.dataset.files}</dd></div>
+				<div><dt>{copy.facts[2]}</dt><dd>{evidence.dataset.format}</dd></div>
+				<div class="is-limited"><dt>{copy.facts[3]}</dt><dd>{copy.partial}</dd><p>{copy.partialNote}</p></div>
+			</dl>
+		</header>
+
+		<nav class="dataset-section-nav" aria-label={lang === 'zh' ? '数据资源章节' : 'Data resource sections'}>
+			<a href="#downloads">{copy.nav[0]}</a>
+			<a href="#preview">{copy.nav[1]}</a>
+			<a href="#schema">{copy.nav[2]}</a>
+			<a href="#reproduce">{copy.nav[3]}</a>
+			<a href="#evidence">{copy.nav[4]}</a>
+		</nav>
+
+		<section id="downloads" class="dataset-section" aria-labelledby="dataset-downloads-title">
+			<header><span>01</span><div><h2 id="dataset-downloads-title">{copy.downloads}</h2><p>{copy.downloadsBody}</p></div></header>
+			<div class="dataset-downloads">
+				{evidence.dataset.downloads.map((resource) => (
+					<article>
+						<div><strong>{resource.label}</strong><p>{resource.description}</p></div>
+						<span>{resource.format}</span><small>{resource.size}</small>
+						<a href={resource.href} target="_blank" rel="noreferrer">{copy.openDownload}<span aria-hidden="true">↓</span></a>
+					</article>
+				))}
+			</div>
+		</section>
+
+		<section id="preview" class="dataset-section" aria-labelledby="dataset-preview-title">
+			<header><span>02</span><div><h2 id="dataset-preview-title">{copy.preview}</h2><p>{copy.previewBody}</p></div></header>
+			<div class="dataset-preview" data-task-preview>
+				<nav aria-label={copy.preview}>
+					{detail.specimens.map((task, index) => <button type="button" data-task-tab={index} aria-pressed={index === 0 ? 'true' : 'false'}><span>{String(index + 1).padStart(2, '0')}</span><strong>{task.context.find((item) => item.label === 'Repository')?.value ?? task.capability}</strong><small>{task.capability.replaceAll('_', ' ')}</small></button>)}
+				</nav>
+				<div>
+					{detail.specimens.map((task, index) => (
+						<article data-task-panel={index} hidden={index !== 0}>
+							<div class="dataset-preview__context"><span>{copy.context}</span><dl>{task.context.map((item) => <div><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl></div>
+							<div class="dataset-preview__question"><span>{copy.taskInput}</span><h3>{task.input}</h3></div>
+							<div class="dataset-preview__rubric"><span>{copy.verify}</span><ol>{task.assertions.map((assertion) => <li>{assertion}</li>)}</ol></div>
+						</article>
+					))}
+				</div>
+			</div>
+		</section>
+
+		<section id="schema" class="dataset-section" aria-labelledby="dataset-schema-title">
+			<header><span>03</span><div><h2 id="dataset-schema-title">{copy.schema}</h2><p>{copy.schemaBody}</p></div></header>
+			<div class="dataset-schema" role="table" aria-label={copy.schema}>
+				<div role="row"><span role="columnheader">{copy.field}</span><span role="columnheader">{copy.type}</span><span role="columnheader">{copy.required}</span><span role="columnheader">{copy.description}</span></div>
+				{evidence.dataset.schema.map((field) => <div role="row"><code role="cell">{field.name}</code><span role="cell">{field.type}</span><small role="cell" class:list={{ 'is-optional': !field.required }}>{field.required ? copy.yes : copy.no}</small><p role="cell">{field.description}</p></div>)}
+			</div>
+		</section>
+
+		<section id="reproduce" class="dataset-section" aria-labelledby="dataset-reproduce-title">
+			<header><span>04</span><div><h2 id="dataset-reproduce-title">{copy.reproduce}</h2><p>{copy.reproduceBody}</p></div></header>
+			<ol class="dataset-reproduction">
+				{evidence.dataset.reproduction.map((step, index) => <li><header><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{step.title}</h3><p>{step.description}</p></div></header><div><pre><code>{step.command}</code></pre><button type="button" data-copy-command={step.command} data-default-label={copy.copyCommand} data-copied-label={copy.copied}>{copy.copyCommand}</button></div></li>)}
+			</ol>
+		</section>
+
+		<section id="evidence" class="dataset-section" aria-labelledby="dataset-evidence-title">
+			<header><span>05</span><div><h2 id="dataset-evidence-title">{copy.evidence}</h2><p>{copy.evidenceBody}</p></div></header>
+			<div class="dataset-evidence">
+				<div class="dataset-evidence__register">
+					{evidence.trustRecords.map((record, index) => <article><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{record.title}</strong><p>{record.description}</p></div><small>{record.state}</small></article>)}
+				</div>
+				<aside>
+					<strong>{copy.versions}</strong>
+					<ol>{evidence.versions.map((version) => <li><div><strong>{version.version}</strong><time datetime={version.date}>{version.date}</time></div><p>{version.note}</p></li>)}</ol>
+					<div><span>{copy.license}</span><strong>{licenseField?.value ?? '—'}</strong><p>{licenseField?.note}</p></div>
+				</aside>
+			</div>
+			<footer class="dataset-boundary"><strong>{copy.boundary}</strong><p>{evidence.publicDataCard.boundary}</p></footer>
+		</section>
+
+		<footer class="dataset-page__footer"><a href={benchmarkPath}>{copy.back}<span aria-hidden="true">←</span></a><a href={libraryPath}>{copy.all}<span aria-hidden="true">↗</span></a></footer>
+	</article>
+
+	<script>
+		const preview = document.querySelector<HTMLElement>('[data-task-preview]');
+		if (preview) {
+			const tabs = [...preview.querySelectorAll<HTMLButtonElement>('[data-task-tab]')];
+			const panels = [...preview.querySelectorAll<HTMLElement>('[data-task-panel]')];
+			tabs.forEach((tab) => tab.addEventListener('click', () => {
+				const target = tab.dataset.taskTab;
+				tabs.forEach((item) => item.setAttribute('aria-pressed', String(item === tab)));
+				panels.forEach((panel) => { panel.hidden = panel.dataset.taskPanel !== target; });
+			}));
+		}
+
+		document.querySelectorAll<HTMLButtonElement>('[data-copy-command]').forEach((button) => {
+			button.addEventListener('click', async () => {
+				await navigator.clipboard.writeText(button.dataset.copyCommand || '');
+				button.textContent = button.dataset.copiedLabel || 'Copied';
+				window.setTimeout(() => { button.textContent = button.dataset.defaultLabel || 'Copy'; }, 1400);
+			});
+		});
+	</script>
+</BaseLayout>
