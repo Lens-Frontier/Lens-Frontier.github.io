@@ -1,1 +1,0 @@
-import{b as a,b1 as o}from"./ArticleLayout.astro_astro_type_script_index_0_lang.CdAhFa_R.js";var b=a((t,e)=>{let n;return e==="sandbox"&&(n=o("#i"+t)),(e==="sandbox"?o(n.nodes()[0].contentDocument.body):o("body")).select(`[id="${t}"]`)},"getDiagramElement");export{b as g};
