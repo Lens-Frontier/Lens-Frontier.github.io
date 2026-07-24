@@ -1,8 +1,14 @@
 ---
 import '../styles/global.css';
+import '../styles/lab-shell.css';
+import '../styles/editorial.css';
+import '../styles/footer-horizon.css';
+import '../styles/alignment.css';
+import '../styles/theme.css';
 import AnalyticsEvents from '../components/AnalyticsEvents.astro';
 import GoogleAnalytics from '../components/GoogleAnalytics.astro';
-import { languageFrom, languages, localizedPath, path, repositoryUrl, siteFor, ui } from '../lib/site';
+import HorizonFooter from '../components/HorizonFooter.astro';
+import { languageFrom, languages, localizedPath, path, siteFor, ui } from '../lib/site';
 import type { Language } from '../lib/site';
 
 type AlternatePath = string | Partial<Record<Language, string>>;
@@ -12,20 +18,33 @@ interface Props {
 	description?: string;
 	lang?: Language;
 	alternatePath?: AlternatePath;
+	showFooter?: boolean;
 }
 
 const lang = languageFrom(Astro.props.lang);
 const labels = ui[lang];
 const site = siteFor(lang);
-const { title = site.title, description = site.description } = Astro.props;
+const { title = site.title, description = site.description, showFooter = true } = Astro.props;
 const alternatePath = Astro.props.alternatePath ?? '/';
-const pageTitle = title === site.title ? title : `${title} - ${site.title}`;
+const titleAlreadyBranded = title === site.title || title.startsWith(`${site.title} -`) || title.endsWith(`- ${site.title}`);
+const pageTitle = titleAlreadyBranded ? title : `${title} - ${site.title}`;
 const canonical = new URL(Astro.url.pathname, Astro.site ?? 'https://example.com');
+const homePath = localizedPath(lang, '/');
+const benchmarkPath = localizedPath(lang, '/benchmarks/');
+const blogPath = localizedPath(lang, '/blog/');
+const currentPath = Astro.url.pathname;
+const mobileNavLabel = lang === 'zh' ? '菜单' : 'Menu';
+const themeLabels = lang === 'zh'
+	? { light: '切换到浅色模式', dark: '切换到暗色模式' }
+	: { light: 'Switch to light mode', dark: 'Switch to dark mode' };
 const navItems = [
-	{ href: localizedPath(lang, '/papers/'), label: labels.nav.papers },
-	{ href: localizedPath(lang, '/benchmarks/'), label: labels.nav.benchmarks },
-	{ href: localizedPath(lang, '/opinions/'), label: labels.nav.opinions },
-	{ href: localizedPath(lang, '/tags/'), label: labels.nav.tags },
+	{ href: `${homePath}#leaderboard`, label: labels.nav.leaderboard, active: currentPath === homePath },
+	{ href: benchmarkPath, label: labels.nav.benchmarks, active: currentPath.startsWith(localizedPath(lang, '/bench')) },
+	{
+		href: blogPath,
+		label: labels.nav.blog,
+		active: ['/blog/', '/opinions/', '/papers/', '/timeline/', '/tags/'].some((route) => currentPath.startsWith(localizedPath(lang, route))),
+	},
 ];
 
 function alternatePathFor(targetLang: Language) {
@@ -38,59 +57,122 @@ function alternatePathFor(targetLang: Language) {
 <html lang={site.htmlLang}>
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
 		<GoogleAnalytics />
 		<title>{pageTitle}</title>
 		<meta name="description" content={description} />
+		<meta name="theme-color" content="#f4f6f5" data-theme-color />
+		<script is:inline>
+			(() => {
+				const stored = localStorage.getItem('lens-frontier-theme');
+				const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const theme = stored === 'light' || stored === 'dark' ? stored : systemDark ? 'dark' : 'light';
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+			})();
+		</script>
 		<link rel="canonical" href={canonical} />
 		{languages.map((item) => (
 			<link rel="alternate" hreflang={siteFor(item).htmlLang} href={localizedPath(item, alternatePathFor(item))} />
 		))}
 		<link rel="icon" type="image/svg+xml" href={path('/favicon.svg')} />
 	</head>
-	<body>
+	<body id="top">
 		<div class="shell">
 			<header class="site-header">
-				<a class="brand" href={localizedPath(lang, '/')}>
-					<span class="brand-mark">LF</span>
-					<span>
-						<strong>Lens Frontier</strong>
-						<small>{labels.brandTagline}</small>
-					</span>
-				</a>
-				<div class="header-actions">
-					<nav class="nav" aria-label="Primary navigation">
-						{navItems.map((item) => <a href={item.href}>{item.label}</a>)}
-					</nav>
-					<nav class="lang-switch" aria-label="Language switcher">
-						{languages.map((item) => (
-							<a
-								href={localizedPath(item, alternatePathFor(item))}
-								aria-current={item === lang ? 'true' : undefined}
-							>
-								{labels.languageNames[item]}
-							</a>
-						))}
-					</nav>
+				<div class="site-header__inner">
+					<a class="brand" href={localizedPath(lang, '/')}>
+						<span class="brand-mark" aria-hidden="true">LF</span>
+						<span class="brand-wordmark">
+							<strong>Lens Frontier</strong>
+							<small>{labels.brandTagline}</small>
+						</span>
+					</a>
+					<div class="header-actions">
+						<nav class="nav" aria-label="Primary navigation">
+							{navItems.map((item, index) => (
+								<a href={item.href} aria-current={item.active ? 'page' : undefined}>
+									<span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+									{item.label}
+								</a>
+							))}
+						</nav>
+						<details class="mobile-nav">
+							<summary>{mobileNavLabel}</summary>
+							<nav aria-label="Mobile navigation">
+								{navItems.map((item, index) => (
+									<a href={item.href} aria-current={item.active ? 'page' : undefined}>
+										<span aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+										<strong>{item.label}</strong>
+									</a>
+								))}
+							</nav>
+						</details>
+						<nav class="lang-switch" aria-label="Language switcher">
+							{languages.map((item) => (
+								<a
+									href={localizedPath(item, alternatePathFor(item))}
+									aria-current={item === lang ? 'true' : undefined}
+								>
+									{labels.languageNames[item]}
+								</a>
+							))}
+						</nav>
+						<button
+							type="button"
+							class="theme-toggle"
+							data-theme-toggle
+							data-light-label={themeLabels.light}
+							data-dark-label={themeLabels.dark}
+							aria-label={themeLabels.dark}
+							title={themeLabels.dark}
+						>
+							<span class="theme-toggle__icon" aria-hidden="true"></span>
+						</button>
+					</div>
 				</div>
 			</header>
 			<main>
 				<slot />
 			</main>
-			<footer class="site-footer">
-				<div>
-					<span>Lens Frontier</span>
-					<span>{labels.footer.line}</span>
-				</div>
-				<nav class="footer-links" aria-label="Secondary navigation">
-					<a href={localizedPath(lang, '/timeline/')}>{labels.footer.timeline}</a>
-					<a href={localizedPath(lang, '/about/')}>{labels.footer.about}</a>
-					<a href={localizedPath(lang, '/rss.xml')}>{labels.footer.rss}</a>
-					<a href={repositoryUrl} target="_blank" rel="noreferrer">{labels.footer.github}</a>
-				</nav>
-			</footer>
+			{showFooter && <HorizonFooter {lang} />}
 		</div>
 		<AnalyticsEvents lang={lang} />
+		<script>
+			const themeMedia = window.matchMedia('(prefers-color-scheme: dark)');
+			const themeColor = document.querySelector<HTMLMetaElement>('[data-theme-color]');
+			const applyTheme = (theme: 'light' | 'dark', persist = false) => {
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+				themeColor?.setAttribute('content', theme === 'dark' ? '#171a19' : '#f4f6f5');
+				document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
+					const nextLabel = theme === 'dark' ? button.dataset.lightLabel : button.dataset.darkLabel;
+					if (nextLabel) {
+						button.setAttribute('aria-label', nextLabel);
+						button.title = nextLabel;
+					}
+					button.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+				});
+				if (persist) localStorage.setItem('lens-frontier-theme', theme);
+				window.dispatchEvent(new CustomEvent('lens-frontier-theme-change', { detail: { theme } }));
+			};
+
+			document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((button) => {
+				button.addEventListener('click', () => {
+					const nextTheme = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+					applyTheme(nextTheme, true);
+				});
+			});
+
+			themeMedia.addEventListener('change', (event) => {
+				if (!localStorage.getItem('lens-frontier-theme')) applyTheme(event.matches ? 'dark' : 'light');
+			});
+			applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+
+			document.querySelectorAll<HTMLDetailsElement>('.mobile-nav').forEach((menu) => {
+				menu.querySelectorAll('a').forEach((link) => link.addEventListener('click', () => menu.removeAttribute('open')));
+			});
+		</script>
 	</body>
 </html>

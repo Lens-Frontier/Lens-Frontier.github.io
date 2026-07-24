@@ -1,5 +1,5 @@
 import rss from '@astrojs/rss';
-import { localizedPath, siteFor } from '../lib/site';
+import { entryPath, siteFor } from '../lib/site';
 import { publishedEntries } from '../lib/content';
 
 export async function GET(context: any) {
@@ -10,7 +10,7 @@ export async function GET(context: any) {
 		title: entry.data.title,
 		description: entry.data.summary,
 		pubDate: entry.data.date,
-		link: localizedPath(lang, `/${collection}/${entry.id}/`),
+		link: entryPath(collection, entry.id, lang),
 	}));
 
 	return rss({

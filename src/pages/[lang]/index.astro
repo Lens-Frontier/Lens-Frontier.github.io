@@ -1,93 +1,776 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import EntryRow from '../../components/EntryRow.astro';
-import { languages, languageFrom, localizedPath, ui } from '../../lib/site';
-import { publishedCollection, publishedEntries } from '../../lib/content';
+import '../../styles/lab-home.css';
+import {
+	benchmarkCatalog,
+	categoryLabels,
+	evidenceLabels,
+	statusLabels,
+} from '../../lib/benchmarkData';
+import { publishedEntries } from '../../lib/content';
+import { modelBrand } from '../../lib/modelBrand';
+import { entryPath, languageFrom, languages, localizedPath } from '../../lib/site';
 
 export function getStaticPaths() {
 	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
 }
 
 const lang = languageFrom(Astro.props.lang);
-const labels = ui[lang];
-const papers = await publishedCollection('papers', lang);
-const benchmarks = await publishedCollection('benchmarks', lang);
-const opinions = await publishedCollection('opinions', lang);
-const latest = (await publishedEntries(lang)).slice(0, 5);
+const catalog = benchmarkCatalog(lang);
+const categories = categoryLabels(lang);
+const statuses = statusLabels(lang);
+const evidence = evidenceLabels(lang);
+const benchmarkPath = localizedPath(lang, '/benchmarks/');
+const blogPath = localizedPath(lang, '/blog/');
+const aboutPath = localizedPath(lang, '/about/');
+const benchPath = (id: string) => localizedPath(lang, `/bench/${id}/`);
+const dataCardPath = (id: string) => localizedPath(lang, `/bench/${id}/data/`);
+const featuredCards = catalog.slice(0, 5);
+const hasPublishedBenchmarks = catalog.length > 0;
+const journalEntries = (await publishedEntries(lang)).slice(0, 4);
+const researchTopicCount = new Set(journalEntries.flatMap(({ entry }) => entry.data.tags ?? [])).size;
 
-const channels = [
-	{
-		label: labels.channels.papers.label,
-		count: papers.length,
-		href: localizedPath(lang, '/papers/'),
-		description: labels.channels.papers.description,
-	},
-	{
-		label: labels.channels.opinions.label,
-		count: opinions.length,
-		href: localizedPath(lang, '/opinions/'),
-		description: labels.channels.opinions.description,
-	},
-	{
-		label: labels.channels.benchmarks.label,
-		count: benchmarks.length,
-		href: localizedPath(lang, '/benchmarks/'),
-		description: labels.channels.benchmarks.description,
-	},
-];
+const copy = lang === 'zh'
+	? {
+		metaTitle: 'Lens Frontier - 模型评测数据平台',
+		metaDescription: '通过真实任务、模型榜单与可追溯证据观察模型能力。',
+		kicker: 'Independent model evaluation',
+		title: '把模型能力，放到真实工作里比较。',
+		intro: 'Lens Frontier 构建真实 Benchmark、运行模型并审查证据。我们不只发布谁领先，也说明分数为何成立。',
+		explore: '浏览全部 Benchmark',
+		readBlog: '阅读研究与文章',
+		preview: `${catalog.length} 个 Benchmark 已发布`,
+			previewNote: '这里只展示已提交并通过发布检查的真实结果。',
+		atlasKicker: 'Capability Atlas',
+		atlasTitle: '在一张能力地图里，查看所有公开 Bench 与模型。',
+		atlasIntro: '矩阵用于扫描全局，Compare 用于比较模型能力轮廓，Table 用于完整查数。三种视图共享同一套筛选状态。',
+		publicBoards: '公开 Bench',
+		results: '评测结果',
+		benchmarkScope: 'Benchmark 范围',
+		allBoards: '全部公开 Bench',
+		metric: '指标',
+		gap: '距第一名',
+		view: '视图',
+		atlas: 'Atlas',
+		compare: 'Compare',
+		table: 'Table',
+		filterEvidence: '证据状态',
+		modelSearch: '搜索模型',
+		modelSearchPlaceholder: '输入模型名称',
+		model: '模型',
+		average: '均分',
+		chartView: '图表',
+		distributionView: '分布',
+		rankingView: '排名',
+		comparisonView: '模型对比',
+		distributionTitle: '所有公开评测结果的能力分布',
+		distributionNote: '每个点代表一次模型评测，横向位置表示当前指标。',
+		rankingTitle: '模型排名',
+		rankingNote: '完整展示当前 Benchmark 下的所有公开结果。',
+		comparisonTitle: '跨 Benchmark 模型能力对比',
+		comparisonNote: '选择最多 4 个模型，查看它们在不同任务上的能力轮廓。',
+		selectModels: '比较模型',
+		selectModelsHint: '最多选择 4 个',
+		chartCompactTitle: 'Benchmark 模型排名',
+		chartCompactNote: '选择一个 Benchmark，马上看清它测什么、谁领先，以及结果是否可信。',
+		benchmarkSignal: '全部 Benchmark',
+			signalNote: '左右滑动浏览已发布评测；点击即可切换',
+		topScoreShort: '最高分',
+		rankedResults: '模型排名',
+		scoreReading: '分数越高，排名越靠前',
+		benchSummary: '这个 Benchmark 测什么',
+		trustBasis: '为什么可信',
+		evaluatedModels: '个模型已评测',
+		singleRanking: '单项排名',
+		crossCompare: '跨 Benchmark 对比',
+		shareImage: '复制分享图',
+		sharingImage: '正在生成…',
+		shareCopied: '已复制，可直接粘贴',
+		shareDownloaded: '已下载 PNG',
+		shareFailed: '生成失败，请重试',
+		switchBenchmark: '筛选 Benchmark 和模型',
+		chooseComparison: '选择对比项',
+		compareRead: '如何读图',
+		compareReadBody: '每组柱形代表一个 Benchmark，同一种颜色代表同一个模型。只在组内比较分数。',
+		compareMaxGap: '最大分差',
+		compareCoverage: '结果覆盖',
+		compareCaution: '不同 Benchmark 独立计分，不直接求平均总分。',
+		compareBenchFilters: '选择 2–6 个 Benchmark',
+		compareModelFilters: '选择 1–4 个模型',
+		openLibrary: '查看 Benchmark 库',
+		benchmarkUnit: '个 Benchmark',
+		modelUnit: '个模型',
+		zoomWindow: '视窗',
+		profileLabel: '选中模型能力轮廓',
+		matrixLabel: '全量结果矩阵',
+		scoreSpan: '分差',
+		scoreAxis: '分数 / 100',
+		currentBenchmark: '当前 Benchmark',
+		selectBoardHint: '当前榜单仅比较同一评测下的模型',
+		leaderScore: '最高分',
+		verifiedResults: '已验证',
+		scored: '项有结果',
+		commonModels: '常用模型',
+		scrollMore: '滚动查看更多',
+		compareModels: '个对比模型',
+		benchmark: 'Benchmark',
+		filters: '全部 Benchmark',
+		filterTitle: '筛选 Benchmark 和模型',
+		benchFilters: '筛选 Benchmark',
+		benchScope: '展示范围',
+		publicResults: '有公开结果',
+		allBenches: '全部 Bench',
+		capabilityDomain: '能力域',
+		allDomains: '全部能力域',
+		benchSearch: '搜索 Benchmark',
+		benchSearchPlaceholder: '输入名称或能力关键词',
+		modelFilters: '筛选模型',
+			noPublicResults: '暂无公开结果',
+			awaitingTitle: '当前筛选下暂无公开榜单',
+			awaitingBody: '榜单只接入可追溯的真实运行结果。提交完成并通过版本、协议与证据检查后，排名和模型对比会自动在这里出现。',
+			awaitingCatalog: '阅读现有博客',
+			awaitingSubmit: '了解 Lens Frontier',
+		releaseKicker: 'Publication status',
+		releaseTitle: '公开评测按证据状态持续发布。',
+		releaseBody: '只有通过版本、协议与证据检查的结果才进入榜单；暂未发布的内容不会用演示数据补齐。',
+		publishedWriting: '已发布内容',
+		researchTopics: '研究主题',
+		releaseGates: [
+			{ title: '任务边界明确', body: '说明能力主张、任务来源、环境和成功条件。' },
+			{ title: '协议可以复现', body: '固定模型版本、工具约束、评分方法与 judge。' },
+			{ title: '结果能够追溯', body: '保留运行记录、证据状态、限制和版本历史。' },
+		],
+		browseResearch: '浏览现有研究',
+		resetFilters: '推荐模型',
+		allModels: '全部模型',
+		quickDefaultModels: '推荐模型',
+		recommendedBenchmarks: '推荐',
+		allBenchmarks: '全部',
+		quickModels: '当前榜单模型',
+		quickModelsHint: '直接点选，左右滑动查看更多',
+		allEvaluatedModels: '全部模型',
+		compareQuickModels: '对比模型',
+		compareQuickHint: '选择 1–4 个模型；选满后点击新模型会替换最早选择',
+		defaultCompareModels: '默认 4 个',
+		refineSelection: '精细筛选',
+		coverage: '覆盖',
+		visibleBenches: '个 Benchmark',
+		selectedModels: '比较托盘',
+		compareHint: '从 Atlas 勾选最多 4 个模型',
+		compareEmpty: '选择模型后，这里会显示跨 Benchmark 的能力轮廓。',
+		compareLimit: '最多对比 4 个',
+		focusedModel: '已聚焦',
+		selectedBenchmarks: '已选对比',
+		resetSelection: '重置',
+		removeBenchmark: '移除',
+		minimumCompareBenchmarks: '至少保留 2 个 Benchmark',
+		compareBoardLimit: '最多对比 6 个 Benchmark',
+		openDataCard: '打开 Data Card',
+		noResult: '暂无结果',
+		boardSelector: '切换 Benchmark',
+		modelSpan: '模型跨度',
+		medianGap: '中位相邻分差',
+		reviewCoverage: '已复核覆盖',
+		models: '个模型',
+		ranking: '模型排名',
+		filterLabel: '筛选模型',
+		filterPlaceholder: '输入模型名称',
+		all: '全部',
+		verified: '已验证',
+		reviewed: '已复核',
+		pending: '待复核',
+		selected: '选中结果',
+		rank: '排名',
+		score: '分数',
+		evidence: '证据',
+		source: '任务来源',
+		judge: 'Judge 方式',
+		openBench: '查看完整 Benchmark',
+		openLeaderboard: '查看完整榜单',
+		cardsKicker: 'Benchmark system',
+		cardsTitle: '每一个分数，都对应一张可追溯的 Data Card。',
+		cardsIntro: '榜单负责显示差异；Data Card 负责交代任务边界、数据来源、评审方式和当前状态。它们是同一个评测项目的两个视角。',
+		capability: '能力主张',
+		cardSource: '数据来源',
+		status: '状态',
+		openCard: '打开 Data Card',
+		allCards: '浏览完整 Benchmark 目录',
+		methodKicker: 'Evidence standard',
+		methodTitle: '可信分数，来自完整证据链。',
+		methodIntro: '任务、协议、运行与评审必须互相可追溯。',
+		steps: [
+			{ no: '01', title: '限定任务', body: '明确仓库、环境、工具和成功条件。' },
+			{ no: '02', title: '冻结协议', body: '固定资源、约束、judge 与版本。' },
+			{ no: '03', title: '采集证据', body: '保留输出、artifact、trace 与异常。' },
+			{ no: '04', title: '复核发布', body: '区分已验证、已复核与待复核结果。' },
+		],
+		research: '查看研究发布',
+		journalTitle: '研究与发布',
+		journalIntro: '发布团队论文、评测方法、Benchmark 版本与模型分析。',
+		allWriting: '查看全部研究内容',
+		readEntry: '查看全文',
+		journalEmpty: '研究成果将在发布后出现在这里。',
+		journalCollections: { papers: '论文', benchmarks: '方法', opinions: '洞察' },
+	}
+	: {
+		metaTitle: 'Lens Frontier - Model Evaluation Data Platform',
+		metaDescription: 'Observe model capability through real tasks, model rankings, and traceable evidence.',
+		kicker: 'Independent model evaluation',
+		title: 'Compare model capability where real work happens.',
+		intro: 'Lens Frontier builds real benchmarks, runs models, and audits the evidence. We publish not only who leads, but why each score holds.',
+		explore: 'Explore all benchmarks',
+		readBlog: 'Read research and writing',
+		preview: `${catalog.length} benchmark${catalog.length === 1 ? '' : 's'} published`,
+			previewNote: 'Only submitted results that pass the publication checks appear here.',
+		atlasKicker: 'Capability Atlas',
+		atlasTitle: 'Explore every public benchmark and model in one capability map.',
+		atlasIntro: 'Scan the full matrix, compare model profiles, or use the table for exact lookup. All three views share one filter state.',
+		publicBoards: 'Public benches',
+		results: 'Evaluation results',
+		benchmarkScope: 'Benchmark scope',
+		allBoards: 'All public benches',
+		metric: 'Metric',
+		gap: 'Gap to leader',
+		view: 'View',
+		atlas: 'Atlas',
+		compare: 'Compare',
+		table: 'Table',
+		filterEvidence: 'Evidence state',
+		modelSearch: 'Search models',
+		modelSearchPlaceholder: 'Type a model name',
+		model: 'Model',
+		average: 'Average',
+		chartView: 'Chart',
+		distributionView: 'Distribution',
+		rankingView: 'Ranking',
+		comparisonView: 'Model comparison',
+		distributionTitle: 'Capability distribution across all public results',
+		distributionNote: 'Each point is one model result; horizontal position encodes the active metric.',
+		rankingTitle: 'Model ranking',
+		rankingNote: 'Every public result for the selected benchmark, shown in one complete ranking.',
+		comparisonTitle: 'Cross-benchmark model comparison',
+		comparisonNote: 'Select up to four models to compare their capability profiles across tasks.',
+		selectModels: 'Compare models',
+		selectModelsHint: 'Select up to 4',
+		chartCompactTitle: 'Benchmark model rankings',
+		chartCompactNote: 'Choose one benchmark to see what it measures, who leads, and why the result is trustworthy.',
+		benchmarkSignal: 'All benchmarks',
+			signalNote: 'Swipe through published evaluations; select one to switch',
+		topScoreShort: 'Top score',
+		rankedResults: 'Model ranking',
+		scoreReading: 'Higher scores rank first',
+		benchSummary: 'What this benchmark measures',
+		trustBasis: 'Why this result is trustworthy',
+		evaluatedModels: 'models evaluated',
+		singleRanking: 'Single ranking',
+		crossCompare: 'Cross-benchmark compare',
+		shareImage: 'Copy share image',
+		sharingImage: 'Generating…',
+		shareCopied: 'Copied — ready to paste',
+		shareDownloaded: 'PNG downloaded',
+		shareFailed: 'Export failed — try again',
+		switchBenchmark: 'Filter benchmarks and models',
+		chooseComparison: 'Choose comparisons',
+		compareRead: 'How to read',
+		compareReadBody: 'Each group is one benchmark; each color is one model. Compare scores within each group.',
+		compareMaxGap: 'Largest spread',
+		compareCoverage: 'Result coverage',
+		compareCaution: 'Benchmarks are scored independently, so no overall average is calculated.',
+		compareBenchFilters: 'Choose 2–6 benchmarks',
+		compareModelFilters: 'Choose 1–4 models',
+		openLibrary: 'Open benchmark library',
+		benchmarkUnit: 'benchmarks',
+		modelUnit: 'models',
+		zoomWindow: 'Window',
+		profileLabel: 'SELECTED MODEL PROFILES',
+		matrixLabel: 'ALL RESULTS MATRIX',
+		scoreSpan: 'Range',
+		scoreAxis: 'Score / 100',
+		currentBenchmark: 'Current benchmark',
+		selectBoardHint: 'This ranking only compares models within one evaluation',
+		leaderScore: 'Top score',
+		verifiedResults: 'Verified',
+		scored: 'scored',
+		commonModels: 'Common models',
+		scrollMore: 'Scroll for more',
+		compareModels: 'comparison models',
+		benchmark: 'Benchmark',
+		filters: 'All benchmarks',
+		filterTitle: 'Filter benchmarks and models',
+		benchFilters: 'Filter benchmarks',
+		benchScope: 'Scope',
+		publicResults: 'Public results',
+		allBenches: 'All benches',
+		capabilityDomain: 'Capability domain',
+		allDomains: 'All domains',
+		benchSearch: 'Search benchmarks',
+		benchSearchPlaceholder: 'Name or capability keyword',
+		modelFilters: 'Filter models',
+			noPublicResults: 'No public results yet',
+			awaitingTitle: 'No public leaderboard matches the current filters',
+			awaitingBody: 'Leaderboards accept only traceable measured results. Rankings and model comparisons appear here after version, protocol, and evidence checks pass.',
+			awaitingCatalog: 'Read the current blog',
+			awaitingSubmit: 'About Lens Frontier',
+		releaseKicker: 'Publication status',
+		releaseTitle: 'Public evaluations are released according to their evidence state.',
+		releaseBody: 'Only results that pass version, protocol, and evidence checks enter the leaderboard; missing releases are never filled with demonstration data.',
+		publishedWriting: 'Published writing',
+		researchTopics: 'Research topics',
+		releaseGates: [
+			{ title: 'A bounded task', body: 'State the capability claim, source, environment, and success conditions.' },
+			{ title: 'A reproducible protocol', body: 'Fix model versions, tool constraints, scoring, and judgment.' },
+			{ title: 'Traceable results', body: 'Retain run records, evidence states, limitations, and version history.' },
+		],
+		browseResearch: 'Browse current research',
+		resetFilters: 'Recommended models',
+		allModels: 'All models',
+		quickDefaultModels: 'Recommended',
+		recommendedBenchmarks: 'Recommended',
+		allBenchmarks: 'All',
+		quickModels: 'Models in this ranking',
+		quickModelsHint: 'Select directly; swipe for more',
+		allEvaluatedModels: 'All models',
+		compareQuickModels: 'Comparison models',
+		compareQuickHint: 'Choose 1–4 models; another choice replaces the earliest selection',
+		defaultCompareModels: 'Default 4',
+		refineSelection: 'Refine',
+		coverage: 'Coverage',
+		visibleBenches: 'benchmarks',
+		selectedModels: 'Compare tray',
+		compareHint: 'Select up to 4 models from the Atlas',
+		compareEmpty: 'Select models to reveal their capability profiles across benchmarks.',
+		compareLimit: 'Compare up to 4',
+		focusedModel: 'Focused',
+		selectedBenchmarks: 'Selected',
+		resetSelection: 'Reset',
+		removeBenchmark: 'Remove',
+		minimumCompareBenchmarks: 'Keep at least 2 benchmarks',
+		compareBoardLimit: 'Compare up to 6 benchmarks',
+		openDataCard: 'Open Data Card',
+		noResult: 'No result',
+		boardSelector: 'Switch benchmark',
+		modelSpan: 'Model span',
+		medianGap: 'Median adjacent gap',
+		reviewCoverage: 'Reviewed coverage',
+		models: 'models',
+		ranking: 'Model ranking',
+		filterLabel: 'Filter models',
+		filterPlaceholder: 'Type a model name',
+		all: 'All',
+		verified: 'Verified',
+		reviewed: 'Reviewed',
+		pending: 'Pending',
+		selected: 'Selected result',
+		rank: 'Rank',
+		score: 'Score',
+		evidence: 'Evidence',
+		source: 'Task source',
+		judge: 'Judge method',
+		openBench: 'Open complete benchmark',
+		openLeaderboard: 'View full leaderboard',
+		cardsKicker: 'Benchmark system',
+		cardsTitle: 'Every score resolves to a traceable Data Card.',
+		cardsIntro: 'The leaderboard reveals differences. The Data Card defines task scope, provenance, judgment, and status. They are two views of the same evaluation project.',
+		capability: 'Capability claim',
+		cardSource: 'Data source',
+		status: 'Status',
+		openCard: 'Open Data Card',
+		allCards: 'Browse the complete benchmark library',
+		methodKicker: 'Evidence standard',
+		methodTitle: 'Trusted scores require a complete evidence chain.',
+		methodIntro: 'Task, protocol, run, and judgment must remain mutually traceable.',
+		steps: [
+			{ no: '01', title: 'Scope the task', body: 'Define repository, environment, tools, and success.' },
+			{ no: '02', title: 'Freeze protocol', body: 'Fix resources, constraints, judge, and version.' },
+			{ no: '03', title: 'Capture evidence', body: 'Retain outputs, artifacts, traces, and exceptions.' },
+			{ no: '04', title: 'Review and publish', body: 'Separate verified, reviewed, and pending results.' },
+		],
+		research: 'View research publications',
+		journalTitle: 'Research & releases',
+		journalIntro: 'Team papers, evaluation methods, benchmark releases, and model analysis.',
+		allWriting: 'View all research',
+		readEntry: 'View publication',
+		journalEmpty: 'Research outputs will appear here after publication.',
+		journalCollections: { papers: 'Paper', benchmarks: 'Method', opinions: 'Insight' },
+	};
+
+const boardPayload = catalog.map((asset) => ({
+	id: asset.id,
+	name: asset.name,
+	category: asset.category,
+	categoryLabel: categories[asset.category],
+	status: asset.status,
+	statusLabel: statuses[asset.status],
+	capability: asset.capability,
+	summary: asset.summary,
+	source: asset.source,
+	judge: asset.judgeMode,
+	href: benchPath(asset.id),
+	leaders: (asset.leaders ?? []).map((leader, index) => ({
+		rank: index + 1,
+		model: leader.model,
+		brand: modelBrand(leader.model),
+		score: leader.score,
+		evidence: leader.evidence,
+		evidenceLabel: evidence[leader.evidence],
+	})),
+}));
+const publicBoardPayload = boardPayload.filter((board) => board.leaders.length > 0);
+const hasPublicResults = publicBoardPayload.length > 0;
+const featuredBoardPayload = publicBoardPayload;
+const previewModelNames = [...new Set(publicBoardPayload.flatMap((board) => board.leaders.map((leader) => leader.model)))];
+const previewModels = previewModelNames
+	.map((model) => {
+		const ranks = publicBoardPayload
+			.map((board) => board.leaders.find((leader) => leader.model === model)?.rank)
+			.filter((rank): rank is number => Number.isFinite(rank));
+		return {
+			model,
+			coverage: ranks.length,
+			averageRank: ranks.reduce((sum, rank) => sum + rank, 0) / Math.max(1, ranks.length),
+		};
+	})
+	.sort((a, b) => a.averageRank - b.averageRank || b.coverage - a.coverage || a.model.localeCompare(b.model));
+const initialBoard = publicBoardPayload[0];
+const initialVisibleLeaders = initialBoard?.leaders.slice(0, 8) || [];
+const initialDefaultModelNames = new Set(initialVisibleLeaders.map((leader) => leader.model));
+
 ---
 
-<BaseLayout lang={lang} alternatePath="/">
-	<section class="hero">
-		<div>
-			<p class="eyebrow">{labels.home.eyebrow}</p>
-			<h1>{labels.home.title}</h1>
-			<p>{labels.home.description}</p>
-		</div>
-		<aside class="signal-panel" aria-label="Content channels">
-			<h2>{labels.home.channels}</h2>
-			<nav class="channel-list">
-				{channels.map((channel) => (
-					<a class="channel-item" href={channel.href}>
-						<span>
-							<strong>{channel.label}</strong>
-							<small>{channel.description}</small>
-						</span>
-						<em>{channel.count}</em>
-					</a>
-				))}
-			</nav>
-		</aside>
-	</section>
-
-	<section class="section-grid">
-		<div>
-			<div class="section-head">
-				<h2>{labels.home.latest}</h2>
-				<a href={localizedPath(lang, '/timeline/')}>{labels.home.timeline}</a>
+<BaseLayout
+	lang={lang}
+	alternatePath="/"
+	title={copy.metaTitle}
+	description={copy.metaDescription}
+>
+	<div class="observatory-home" data-observatory>
+		<section class="obs-intro" aria-labelledby="obs-title">
+			<div class="obs-intro__title">
+				<span class="obs-kicker"><i aria-hidden="true"></i>{copy.kicker}</span>
+				<h1 id="obs-title">{copy.title}</h1>
 			</div>
-			<div class="entry-list">
-				{latest.length ? (
-					latest.map(({ entry, collection }) => (
-						<EntryRow entry={entry} collection={collection} lang={lang} />
-					))
-				) : (
-					<div class="empty-state">
-						<p>{labels.home.emptyTitle}</p>
-						<span>{labels.home.emptyBody}</span>
+			<div class="obs-intro__statement">
+				<p>{copy.intro}</p>
+				<a href={hasPublishedBenchmarks ? benchmarkPath : blogPath} class="obs-arrow-link">
+					{hasPublishedBenchmarks ? copy.explore : copy.readBlog}<span aria-hidden="true">↗</span>
+				</a>
+				<div class="obs-release"><i aria-hidden="true"></i><span>{copy.preview}</span></div>
+			</div>
+		</section>
+
+		{hasPublicResults ? <section id="leaderboard" class="chart-lab" aria-labelledby="chart-lab-title">
+			<header class="chart-lab__compact-head">
+				<div>
+					<h2 id="chart-lab-title">{copy.chartCompactTitle}</h2>
+					<p data-chart-view-note>{copy.chartCompactNote}</p>
+				</div>
+					{hasPublicResults && <div class="chart-lab__compact-actions">
+						<div class="chart-lab__mode-switch" role="group" aria-label={lang === 'zh' ? '榜单模式' : 'Leaderboard mode'}>
+							<button type="button" data-chart-mode="ranking" aria-pressed="true">{copy.singleRanking}</button>
+							<button type="button" data-chart-mode="compare" aria-pressed="false">{copy.crossCompare}</button>
+						</div>
+						<button type="button" class="chart-lab__share" data-share-chart>{copy.shareImage}</button>
+						<button type="button" data-filter-toggle aria-expanded="false" aria-controls="chart-filter-panel">
+							<span data-filter-toggle-label>{copy.switchBenchmark}</span>
+							<span class="chart-lab__filter-short">{lang === 'zh' ? '筛选' : 'Filters'}</span>
+							<small><b data-filter-toggle-board-count>{publicBoardPayload.length}</b> Bench · <b data-filter-toggle-model-count>{initialVisibleLeaders.length}</b> {copy.modelUnit}</small>
+					</button>
+					</div>}
+				</header>
+
+				{hasPublicResults ? (<>
+				<div id="chart-filter-panel" class="chart-lab__filter-popover" data-filter-panel hidden>
+				<header><div><strong data-filter-title>{copy.filterTitle}</strong><small><b data-filter-panel-board-count>{publicBoardPayload.length}</b> Bench · <b data-filter-panel-model-count>{initialVisibleLeaders.length}</b> {copy.modelUnit}</small></div><button type="button" data-filter-close aria-label={lang === 'zh' ? '关闭筛选' : 'Close filters'}>×</button></header>
+				<div class="chart-lab__filter-grid">
+					<section>
+						<div class="chart-lab__filter-section-title"><strong data-board-filter-title>{copy.benchFilters}</strong><div class="chart-lab__filter-presets"><button type="button" data-board-recommended>{copy.recommendedBenchmarks}</button><button type="button" data-board-all>{copy.allBenchmarks}</button><small data-board-selected-count>{publicBoardPayload.length}/{publicBoardPayload.length}</small></div></div>
+						<label class="chart-lab__search"><span>{copy.benchSearch}</span><input type="search" data-board-search placeholder={copy.benchSearchPlaceholder} autocomplete="off" /></label>
+						<div class="chart-lab__board-list" data-board-list>
+							{publicBoardPayload.map((board) => (
+								<label data-board-row={board.id} title={board.summary}>
+									<input type="checkbox" value={board.id} data-board-pick checked />
+									<span><strong>{board.name}</strong><small>{board.categoryLabel}</small></span>
+									<em>{board.leaders.length} {copy.models}</em>
+								</label>
+							))}
+						</div>
+					</section>
+					<section>
+						<div class="chart-lab__filter-section-title"><strong>{copy.modelFilters}</strong><div class="chart-lab__filter-presets"><button type="button" data-filter-recommended>{copy.resetFilters}</button><button type="button" data-filter-all>{copy.allModels}</button><small data-model-selected-count>{initialVisibleLeaders.length}/{initialBoard?.leaders.length || 0}</small></div></div>
+						<label class="chart-lab__search"><span>{copy.modelSearch}</span><input type="search" data-model-search placeholder={copy.modelSearchPlaceholder} autocomplete="off" /></label>
+						<div class="chart-lab__model-list" data-model-list>
+							{previewModels.map((item) => {
+								const brand = modelBrand(item.model);
+								return (
+									<label data-model-row={item.model} title={`${copy.coverage} ${item.coverage}/${publicBoardPayload.length}`}>
+										<input type="checkbox" value={item.model} data-model-check checked={initialDefaultModelNames.has(item.model)} />
+										<span class="chart-lab__model-name">
+											{brand && <img src={brand.icon} alt="" width="18" height="18" loading="lazy" aria-hidden="true" />}
+											<strong>{item.model}</strong>
+										</span>
+										<small data-model-coverage>{item.coverage}/{publicBoardPayload.length}</small>
+									</label>
+								);
+							})}
+						</div>
+					</section>
+				</div>
+			</div>
+
+			<div class="chart-lab__stage chart-lab__stage--compact">
+				<div class="chart-lab__bench-signal">
+					<header>
+						<div><span>{copy.benchmarkSignal}</span><strong data-active-board-signal>{initialBoard?.name}</strong></div>
+						<small data-bench-signal-note>{copy.signalNote}</small>
+					</header>
+					<div class="chart-lab__selection-dock" data-compare-selection hidden>
+						<div><span>{copy.selectedBenchmarks}</span><strong><b data-compare-selection-count>4</b>/6</strong></div>
+						<div class="chart-lab__selection-list" data-compare-selection-list aria-live="polite"></div>
+						<button type="button" data-compare-selection-reset>{copy.resetSelection}</button>
+					</div>
+					<div class="chart-lab__signal-list" data-bench-signal-list role="list" aria-label={copy.benchmarkSignal}>
+						{featuredBoardPayload.map((board, index) => (
+							<button
+								type="button"
+								role="listitem"
+								data-bench-signal={board.id}
+								data-board-name={board.name}
+								aria-pressed={board.name === initialBoard?.name ? 'true' : 'false'}
+								aria-label={`${board.name} · ${board.capability} · ${board.leaders.length} ${copy.evaluatedModels}`}
+							>
+								<span>{String(index + 1).padStart(2, '0')}</span>
+								<strong>{board.name}</strong>
+								<p>{board.capability}</p>
+								<small><b>{board.leaders.length}</b><em>{copy.evaluatedModels}</em></small>
+							</button>
+						))}
+					</div>
+				</div>
+				<div class="chart-lab__workspace">
+					<div class="chart-lab__ranking-plot">
+						<header><span><b data-ranking-title>{copy.rankedResults}</b><small data-ranking-note>{copy.scoreReading}</small></span><strong><b data-ranking-count>{initialVisibleLeaders.length}</b> <em data-ranking-unit>{copy.models}</em></strong></header>
+						<div class="chart-lab__canvas" data-chart-canvas>
+							<div data-leader-chart role="img" aria-label={copy.chartCompactTitle}></div>
+							<p data-chart-empty hidden>{copy.noResult}</p>
+						</div>
+					</div>
+				</div>
+				<footer>
+					<span>{copy.previewNote}</span>
+					<div><a data-atlas-detail data-library-href={benchmarkPath} href={initialBoard?.href ?? benchmarkPath}><span data-detail-label>{copy.openBench}</span><span aria-hidden="true">↗</span></a></div>
+					</footer>
+				</div>
+				</>) : (
+					<div class="chart-lab__publication-empty">
+						<span>{copy.noPublicResults}</span>
+						<strong>{copy.awaitingTitle}</strong>
+						<p>{copy.awaitingBody}</p>
+						<div>
+							<a href={blogPath}>{copy.awaitingCatalog}<span aria-hidden="true">↗</span></a>
+							<a href={aboutPath}>{copy.awaitingSubmit}<span aria-hidden="true">↗</span></a>
+						</div>
 					</div>
 				)}
+			</section> : (
+				<section id="leaderboard" class="obs-release-board" aria-labelledby="obs-release-title">
+					<header>
+						<span class="obs-kicker">{copy.releaseKicker}</span>
+						<h2 id="obs-release-title">{copy.releaseTitle}</h2>
+						<p>{copy.releaseBody}</p>
+						<dl>
+							<div><dt>{copy.publishedWriting}</dt><dd>{String(journalEntries.length).padStart(2, '0')}</dd></div>
+							<div><dt>{copy.researchTopics}</dt><dd>{String(researchTopicCount).padStart(2, '0')}</dd></div>
+						</dl>
+					</header>
+					<div class="obs-release-board__gates">
+						<ol>
+							{copy.releaseGates.map((gate, index) => (
+								<li><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{gate.title}</strong><p>{gate.body}</p></div></li>
+							))}
+						</ol>
+						<footer>
+							<a href={blogPath}>{copy.browseResearch}<span aria-hidden="true">↗</span></a>
+							<a href={aboutPath}>{copy.awaitingSubmit}<span aria-hidden="true">↗</span></a>
+						</footer>
+					</div>
+				</section>
+			)}
+
+		{featuredCards.length > 0 && <section id="data-cards" class="obs-cards" aria-labelledby="obs-cards-title">
+			<header class="obs-section-heading" data-obs-reveal>
+				<span class="obs-kicker">{copy.cardsKicker}</span>
+				<h2 id="obs-cards-title">{copy.cardsTitle}</h2>
+				<p>{copy.cardsIntro}</p>
+			</header>
+
+			<div class="obs-card-index" data-obs-reveal>
+				{featuredCards.map((card, index) => (
+					<a href={dataCardPath(card.id)} class:list={{ 'is-featured': index === 0 }}>
+						<header><span>{String(index + 1).padStart(2, '0')}</span><small>{statuses[card.status]}</small></header>
+						<h3>{card.name}</h3>
+						<p>{card.summary}</p>
+						<dl>
+							<div><dt>{copy.capability}</dt><dd>{card.capability}</dd></div>
+							<div><dt>{copy.cardSource}</dt><dd>{card.source}</dd></div>
+							<div><dt>{copy.judge}</dt><dd>{card.judgeMode}</dd></div>
+						</dl>
+						<footer><span>{categories[card.category]}</span><strong>{copy.openCard} ↗</strong></footer>
+					</a>
+				))}
 			</div>
-		</div>
-		<aside class="side-rail">
-			<div class="note-box">
-				<h2>{labels.home.scopeTitle}</h2>
-				<p>{labels.home.scopeBody}</p>
+			{catalog.length > featuredCards.length && <a class="obs-arrow-link obs-cards__more" href={benchmarkPath}>{copy.allCards}<span aria-hidden="true">↗</span></a>}
+		</section>}
+
+		<section id="blog" class="obs-journal" aria-labelledby="obs-journal-title">
+			<header class="obs-journal__head" data-obs-reveal>
+				<div>
+					<h2 id="obs-journal-title">{copy.journalTitle}</h2>
+					<p>{copy.journalIntro}</p>
+				</div>
+				<a class="obs-arrow-link" href={blogPath}>{copy.allWriting}<span aria-hidden="true">↗</span></a>
+			</header>
+			{journalEntries.length ? (
+				<div class="obs-journal__list" data-obs-reveal>
+					{journalEntries.map(({ entry, collection }) => (
+						<a href={entryPath(collection, entry.id, lang)}>
+							<header>
+								<span>{copy.journalCollections[collection]}</span>
+								<time datetime={entry.data.date.toISOString()}>{entry.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}</time>
+							</header>
+							<h3>{entry.data.title}</h3>
+							<p>{entry.data.summary}</p>
+							<footer>
+								<span>{entry.data.tags?.slice(0, 2).join(' · ')}</span>
+								<strong>{copy.readEntry} ↗</strong>
+							</footer>
+						</a>
+					))}
+				</div>
+			) : <p class="obs-journal__empty">{copy.journalEmpty}</p>}
+		</section>
+
+		<section id="insights" class="obs-method" aria-labelledby="obs-method-title">
+			<div class="obs-method__statement" data-obs-reveal>
+				<span class="obs-kicker">{copy.methodKicker}</span>
+				<h2 id="obs-method-title">{copy.methodTitle}</h2>
+				<p>{copy.methodIntro}</p>
+				<a class="obs-arrow-link" href={blogPath}>{copy.research}<span aria-hidden="true">↗</span></a>
 			</div>
-			<div class="note-box">
-				<h2>{labels.home.styleTitle}</h2>
-				<p>{labels.home.styleBody}</p>
-			</div>
-		</aside>
-	</section>
+			<ol class="obs-method__steps" data-obs-reveal>
+				{copy.steps.map((step) => (
+					<li><span>{step.no}</span><div><strong>{step.title}</strong><p>{step.body}</p></div></li>
+				))}
+			</ol>
+		</section>
+
+		{hasPublicResults && <>
+		<script is:inline type="application/json" id="obs-board-data" set:html={JSON.stringify(boardPayload)}></script>
+		<script is:inline type="application/json" id="obs-ui-copy" set:html={JSON.stringify({
+			model: copy.model,
+			average: copy.average,
+			models: copy.models,
+			publicBoards: copy.publicBoards,
+			results: copy.results,
+			noResult: copy.noResult,
+			compareLimit: copy.compareLimit,
+			selectedBenchmarks: copy.selectedBenchmarks,
+			resetSelection: copy.resetSelection,
+			removeBenchmark: copy.removeBenchmark,
+			minimumCompareBenchmarks: copy.minimumCompareBenchmarks,
+			compareBoardLimit: copy.compareBoardLimit,
+			score: copy.score,
+			rank: copy.rank,
+			gap: copy.gap,
+			evidence: copy.evidence,
+			verified: copy.verified,
+			reviewed: copy.reviewed,
+			pending: copy.pending,
+			distributionTitle: copy.distributionTitle,
+			distributionNote: copy.distributionNote,
+			rankingTitle: copy.rankingTitle,
+			rankingNote: copy.rankingNote,
+			comparisonTitle: copy.comparisonTitle,
+			comparisonNote: copy.comparisonNote,
+			visibleBenches: copy.visibleBenches,
+			chartCompactTitle: copy.chartCompactTitle,
+			chartCompactNote: copy.chartCompactNote,
+			preview: copy.preview,
+			benchmarkSignal: copy.benchmarkSignal,
+			signalNote: copy.signalNote,
+			rankedResults: copy.rankedResults,
+			benchSummary: copy.benchSummary,
+			zoomWindow: copy.zoomWindow,
+			profileLabel: copy.profileLabel,
+			matrixLabel: copy.matrixLabel,
+			scoreSpan: copy.scoreSpan,
+			scoreAxis: copy.scoreAxis,
+			leaderScore: copy.leaderScore,
+			verifiedResults: copy.verifiedResults,
+			scored: copy.scored,
+			coverage: copy.coverage,
+				compareModels: copy.compareModels,
+				focusedModel: copy.focusedModel,
+			benchmark: copy.benchmark,
+			noPublicResults: copy.noPublicResults,
+			singleRanking: copy.singleRanking,
+			crossCompare: copy.crossCompare,
+			shareImage: copy.shareImage,
+			sharingImage: copy.sharingImage,
+			shareCopied: copy.shareCopied,
+			shareDownloaded: copy.shareDownloaded,
+			shareFailed: copy.shareFailed,
+			switchBenchmark: copy.switchBenchmark,
+			chooseComparison: copy.chooseComparison,
+			filterTitle: copy.filterTitle,
+			benchFilters: copy.benchFilters,
+			modelFilters: copy.modelFilters,
+			resetFilters: copy.resetFilters,
+			allModels: copy.allModels,
+			quickDefaultModels: copy.quickDefaultModels,
+			recommendedBenchmarks: copy.recommendedBenchmarks,
+			allBenchmarks: copy.allBenchmarks,
+			quickModels: copy.quickModels,
+			quickModelsHint: copy.quickModelsHint,
+			allEvaluatedModels: copy.allEvaluatedModels,
+			compareQuickModels: copy.compareQuickModels,
+			compareQuickHint: copy.compareQuickHint,
+			defaultCompareModels: copy.defaultCompareModels,
+			refineSelection: copy.refineSelection,
+			openLibrary: copy.openLibrary,
+			openBench: copy.openBench,
+			benchmarkUnit: copy.benchmarkUnit,
+			modelUnit: copy.modelUnit,
+			compareMaxGap: copy.compareMaxGap,
+			compareCoverage: copy.compareCoverage,
+			compareCaution: copy.compareCaution,
+			compareBenchFilters: copy.compareBenchFilters,
+			compareModelFilters: copy.compareModelFilters,
+			scoreReading: copy.scoreReading,
+			evaluatedModels: copy.evaluatedModels,
+		})}></script>
+		</>}
+	</div>
+
+	<script is:inline>
+		(() => {
+			const root = document.querySelector('[data-observatory]');
+			if (!root) return;
+			const nodes = [...root.querySelectorAll('[data-obs-reveal]')];
+			const showAll = () => nodes.forEach((node) => node.classList.add('is-visible'));
+			if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+				showAll();
+				return;
+			}
+			const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
+				if (!entry.isIntersecting) return;
+				entry.target.classList.add('is-visible');
+				observer.unobserve(entry.target);
+			}), { rootMargin: '0px 0px 8% 0px', threshold: 0.08 });
+			nodes.forEach((node) => observer.observe(node));
+		})();
+	</script>
+
+	{hasPublicResults && <script>
+		import '../../scripts/homeLeaderboard';
+	</script>}
 </BaseLayout>

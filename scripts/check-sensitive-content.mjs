@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
@@ -28,6 +29,12 @@ const sensitiveFilePatterns = [
 	{
 		name: 'private key or certificate bundle',
 		test: (file) => /\.(pem|key|p12|pfx)$/i.test(file),
+	},
+	{
+		name: 'private working document',
+		test: (file) =>
+			/(^|\/)(?:internal|private|confidential)(?:[-_.\/]|$)/i.test(file) ||
+			/(^|\/)[^/]*(?:intake|handoff|working-notes)[^/]*$/i.test(file),
 	},
 ];
 
@@ -64,6 +71,14 @@ const contentPatterns = [
 		name: 'Slack token',
 		regex: /\bxox(?:[abprs]|c)-[A-Za-z0-9-]{20,}\b/g,
 	},
+	{
+		name: 'internal-looking host',
+		regex: /\b(?:https?:\/\/)?(?:[A-Za-z0-9-]+\.)*(?:[A-Za-z0-9-]+-int|internal|intranet|corp)(?:\.[A-Za-z0-9-]+)+(?:[/?#][^\s`'"<>]*)?/gi,
+	},
+	{
+		name: 'local user path',
+		regex: /(?:\/Users\/[^/\s]+|\/home\/[^/\s]+|[A-Z]:\\Users\\[^\\\s]+)(?:[/\\][^\s`'"<>]*)?/g,
+	},
 ];
 
 function extname(file) {
@@ -81,18 +96,15 @@ function lineColumn(text, index) {
 	return { line: lines.length, column: lines.at(-1).length + 1 };
 }
 
-function mask(value) {
-	if (value.length <= 12) return value;
-	return `${value.slice(0, 6)}...${value.slice(-4)}`;
-}
-
-const { stdout } = await execFileAsync('git', ['ls-files', '-z'], {
+const { stdout } = await execFileAsync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
 	maxBuffer: 20 * 1024 * 1024,
 });
 const files = stdout.split('\0').filter(Boolean);
 const errors = [];
 
 for (const file of files) {
+	if (!existsSync(file)) continue;
+
 	for (const rule of sensitiveFilePatterns) {
 		if (rule.test(file)) {
 			errors.push(`${file}: sensitive file type should not be committed (${rule.name})`);
@@ -115,7 +127,7 @@ for (const file of files) {
 		rule.regex.lastIndex = 0;
 		for (const match of text.matchAll(rule.regex)) {
 			const { line, column } = lineColumn(text, match.index ?? 0);
-			errors.push(`${file}:${line}:${column}: ${rule.name}: ${mask(match[0])}`);
+			errors.push(`${file}:${line}:${column}: ${rule.name}`);
 		}
 	}
 }

@@ -1,0 +1,71 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import '../../../styles/blog-lab.css';
+import { entryPath, languages, languageFrom, localizedPath, ui } from '../../../lib/site';
+import { publishedEntries } from '../../../lib/content';
+
+export function getStaticPaths() {
+	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
+}
+
+const lang = languageFrom(Astro.props.lang);
+const labels = ui[lang].pages.blog;
+const collectionLabels = ui[lang].collectionLabels;
+const entries = await publishedEntries(lang);
+const blogLinks = [
+	{ href: localizedPath(lang, '/papers/'), title: ui[lang].pages.papers.title, body: ui[lang].pages.papers.description },
+	{ href: localizedPath(lang, '/blog/methods/'), title: ui[lang].pages.benchmarks.title, body: ui[lang].pages.benchmarks.description },
+	{ href: localizedPath(lang, '/opinions/'), title: ui[lang].pages.opinions.title, body: ui[lang].pages.opinions.description },
+];
+const browseLinks = [
+	{ href: localizedPath(lang, '/blog/tags/'), title: ui[lang].pages.tags.title },
+	{ href: localizedPath(lang, '/timeline/'), title: ui[lang].pages.timeline.title },
+];
+const copy = lang === 'zh'
+	? { title: '研究与洞察', intro: '这里发布 Lens Frontier 的团队论文、评测方法和模型洞察。', channels: '内容类型', browse: '浏览', latest: '最新发布', empty: '研究成果将在发布后按时间出现在这里。' }
+	: { title: 'Research & Insights', intro: 'Lens Frontier papers, evaluation methods, and model insights.', channels: 'Publication types', browse: 'Browse', latest: 'Latest releases', empty: 'Research outputs will appear here in publication order.' };
+---
+
+<BaseLayout lang={lang} title={labels.title} description={labels.description} alternatePath="/blog/">
+	<div class="lab-blog">
+		<header class="lab-blog__hero">
+			<h1>{copy.title}</h1>
+			<p>{copy.intro}</p>
+		</header>
+
+		<section class="lab-blog__channels" aria-labelledby="lab-blog-channels">
+			<header class="lab-blog__section-head">
+				<h2 id="lab-blog-channels">{copy.channels}</h2>
+				<nav class="lab-blog__browse" aria-label={copy.browse}>
+					{browseLinks.map((item) => <a href={item.href}>{item.title} <span aria-hidden="true">↗</span></a>)}
+				</nav>
+			</header>
+			<nav>
+				{blogLinks.map((item, index) => (
+					<a href={item.href}>
+						<span>{String(index + 1).padStart(2, '0')}</span>
+						<strong>{item.title}</strong>
+						<p>{item.body}</p>
+						<i aria-hidden="true">↗</i>
+					</a>
+				))}
+			</nav>
+		</section>
+
+		<section class="lab-blog__latest" aria-labelledby="lab-blog-latest">
+			<h2 id="lab-blog-latest">{copy.latest}</h2>
+			{entries.length ? (
+				<div>
+					{entries.map(({ entry, collection }) => (
+						<a href={entryPath(collection, entry.id, lang)}>
+							<span>{collectionLabels[collection]}</span>
+							<time datetime={entry.data.date.toISOString()}>{entry.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}</time>
+							<strong>{entry.data.title}</strong>
+							<p>{entry.data.summary}</p>
+						</a>
+					))}
+				</div>
+			) : <p class="lab-blog__empty">{copy.empty}</p>}
+		</section>
+	</div>
+</BaseLayout>

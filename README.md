@@ -1,6 +1,6 @@
-# Lens Frontier Blog
+# Lens Frontier Evaluation Lab
 
-一个简洁克制的 paper / benchmark / opinion blog，用来沉淀大家平时阅读分享的论文，并输出一些围绕 benchmark 的浅薄观点。
+Lens Frontier 以 Benchmark、模型榜单和可追溯 Data Card 为核心。研究 Blog 用于发布团队论文、评测方法、数据集版本和模型分析。
 
 ## 本地开发
 
@@ -13,24 +13,38 @@ pnpm dev
 
 默认通过 Pull Request 投稿。完整规范见 [CONTRIBUTING.md](./CONTRIBUTING.md)，文章模板在 [templates](./templates)。
 
-PR 会自动运行 CI，分成 `syntax` 和 `check` 两个 job：`syntax` 覆盖 workflow / Astro / TypeScript / Worker 语法，`check` 覆盖 Markdown、内容规范、中文引号配对、资产硬限制、图片建议提示、analytics smoke、生产构建和构建产物检查。中文引号配对属于硬性阻断；构建产物检查会对疑似未渲染的 Markdown 标记输出 warning，并写入 GitHub Actions summary，但不阻塞 CI。CI 成功后，机器人会在 PR comment 里输出带 commit hash 的预览链接。
+Benchmark 或榜单更新只接收可公开、可追溯的资料：公开来源与许可、版本化任务和协议、机器可读结果、验证或复核状态，以及足以解释结论边界的公开证据。页面内容契约见 [Benchmark 内页内容标准](./docs/BENCHMARK_PAGE_STANDARD.md)，代码接入方式见 [Adding Benchmarks](./docs/ADDING_BENCHMARKS.md)。
+
+PR 会自动运行 CI，分成 `syntax` 和 `check` 两个 job：`syntax` 覆盖 workflow / Astro / TypeScript / Worker 语法，`check` 覆盖 Markdown、内容规范、中文引号配对、Bench 数据、资产硬限制、图片建议提示、analytics smoke、静态构建和构建产物检查。中文引号配对属于硬性阻断；构建产物检查会对疑似未渲染的 Markdown 标记输出 warning，并写入 GitHub Actions summary，但不阻塞 CI。CI 成功后，机器人会在 PR comment 里输出带 commit hash 的隔离预览链接。PR 预览不会替换正式站点，正式发布必须手动运行部署 workflow 并确认目标 commit。
 
 ### Agent 辅助投稿
 
-如果使用 Codex、Claude Code 或其他 coding agent 辅助投稿，请先让 agent 读取仓库内的 `.agents/skills/lens-frontier-post/SKILL.md`，再开始创建或修改文章。可以直接把这句话放在任务开头：
+如果使用 Codex、Claude Code 或其他 coding agent，文章投稿可以读取 `.agents/skills/lens-frontier-post/SKILL.md`。
 
 ```txt
-请先读取 .agents/skills/lens-frontier-post/SKILL.md，并按其中流程从个人 fork 新建分支、运行检查、向 Lens-Frontier/blog 提交 PR。
+请先读取 .agents/skills/lens-frontier-post/SKILL.md，并按其中流程从个人 fork 新建分支、运行检查并提交 PR。
 ```
 
-这个 Skill 会约束文章模板、作者信息、图片目录、CI 检查、PR 预览和旧 PR 状态检查。Agent 辅助投稿仍然默认走 fork PR，并且需要 CI 通过和维护者 review 后才能合入。
+Agent 辅助投稿仍然默认走 fork PR，并且需要 CI 通过和维护者 review 后才能合入。
+
+## Benchmark 数据
+
+首页实验台、Benchmark Library 和 Bench 详情页共享同一份结构化数据：
+
+```txt
+src/lib/benchmarkData.ts        # 目录、能力域、状态和 Data Card 摘要
+src/lib/benchmarkResults.ts     # 仅保存审核后可公开的真实榜单结果
+src/lib/benchmarkDetailData.ts  # Task、Method、Evidence 和 Findings
+```
+
+当前公开目录只包含能够从论文与公开仓库核对的 `Code-QA-Bench`。未达到公开来源、许可、版本和证据要求的项目不进入数据路径；通过审核的 Bench 才加入 `publishedBenchmarkCatalog`，可追溯的模型结果再加入 `publishedLeaderboards`。新增或更新 Bench 的字段说明、榜单规则和验证步骤见 [docs/ADDING_BENCHMARKS.md](./docs/ADDING_BENCHMARKS.md)；页面内容契约见 [docs/BENCHMARK_PAGE_STANDARD.md](./docs/BENCHMARK_PAGE_STANDARD.md)。
 
 ## 内容目录
 
 ```txt
-src/content/papers       # 论文阅读分享
-src/content/benchmarks   # benchmark 观察
-src/content/opinions     # 围绕 benchmark 的观点文章
+src/content/papers       # 团队论文与预印本
+src/content/benchmarks   # 评测方法文章
+src/content/opinions     # 评测洞察与分析文章
 ```
 
 每篇文章使用 Markdown frontmatter 管理元数据。字段 schema 在 `src/content.config.ts`。站点支持 `/zh/` 和 `/en/` 两套语言路由，文章通过 `lang: "zh"` 或 `lang: "en"` 决定展示在哪个语言下；允许单语发布，不要求同步翻译。后续补译文时，两篇文章可以使用同一个 `translationKey`，中英切换会优先留在同一篇文章。
@@ -39,11 +53,31 @@ src/content/opinions     # 围绕 benchmark 的观点文章
 
 仓库使用 `.github/CODEOWNERS` 自动请求 `@Lens-Frontier/blog-maintainers` review 文章、站点、CI 和发布流程改动。
 
-顶部导航保留主要阅读入口：`Papers`、`Benchmarks`、`Opinions` 和 `Tags`。`Timeline`、`About` 和 `RSS` 放在页脚，避免顶部导航过重。
+顶部导航只保留数据平台的三个核心入口：`榜单`、`Benchmarks` 和 `博客`。`Papers`、`Opinions`、研究主题和时间线统一收进 Blog；`About`、`RSS` 和 GitHub 放在页脚。
+
+## 全面升级中的内容保留
+
+新站以前端与评测数据体验为主，但原仓库内容仍然是正式数据源：
+
+- `src/content/` 中的论文、Benchmark 方法文章和评测洞察保留原文、slug、日期、作者与标签。
+- `src/assets/posts/` 与 `public/assets/authors/` 保留文章图片和作者头像。
+- 原有 `/<collection>/<slug>/` 链接继续跳转到新的中英文文章路由。
+- 阅读量继续使用稳定的 `<collection>/<slug>` 作为 `articleId`，避免历史计数断开。
+- RSS、标签、时间线、GA、first-party pageview、PR 预览和投稿 CI 继续保留。
+
+`pnpm check:dist` 会逐篇验证公开文章的新路由、旧兼容路由、阅读量 ID 和语言 RSS，防止后续前端升级误删内容入口。升级前已经发布的内容另外记录在 `docs/content-preservation-manifest.json`；误删源文件或稳定路由会直接阻塞 CI。
+
+## 仓库边界
+
+当前仓库可以继续承载站点代码、文章、Data Card 元数据和体量较小的公开结果。全面升级先在现有仓库完成并通过 PR 预览，再执行仓库改名，可以保留 PR、文章和贡献历史并降低迁移风险。
+
+它不适合承载完整 Benchmark 数据集、大型运行日志、模型输出、容器镜像或评测 harness。此类资产应保留在独立的公开数据仓库或对象存储中，本站只保存审核后的摘要、可计算小型结果、版本和稳定引用。仓库改名应在升级 PR 合并后执行，并同步验证 GitHub Pages base、预览 URL、外部链接和部署配置。
 
 ## 部署到 GitHub Pages
 
-项目已经包含 `.github/workflows/deploy.yml`。推到 GitHub 后，在仓库设置里把 Pages source 设为 `Deploy from a branch`，分支选择 `gh-pages` / root。
+项目已经包含 `.github/workflows/deploy.yml`。正式部署采用手动触发：在 Actions 中选择 `Deploy to GitHub Pages`，填写需要发布的 git ref，并确认生产发布。合入 `main` 本身不会自动覆盖正式站点。
+
+本地预览、PR 隔离预览、全面升级分支和正式发布步骤见 [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)。
 
 如果仓库名不是 `<username>.github.io`，配置会在 GitHub Actions 中自动把 `base` 设置为 `/<repo-name>`。
 

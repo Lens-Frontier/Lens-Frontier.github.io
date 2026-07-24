@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "description": "Published research content that must survive the site upgrade unless a reviewed migration explicitly updates this manifest.",
+  "articles": [
+    {
+      "source": "benchmarks/refactor-bench-eval.md",
+      "route": "zh/blog/refactor-bench-eval/index.html"
+    },
+    {
+      "source": "opinions/agent-harness-search-research.md",
+      "route": "zh/blog/agent-harness-search-research/index.html"
+    },
+    {
+      "source": "opinions/browsecomp-query-hardening.md",
+      "route": "zh/blog/browsecomp-query-hardening/index.html"
+    },
+    {
+      "source": "opinions/t2i-multi-module-evaluation.md",
+      "route": "zh/blog/t2i-multi-module-evaluation/index.html"
+    },
+    {
+      "source": "opinions/t2i-multi-module-evaluation-en.md",
+      "route": "en/blog/t2i-multi-module-evaluation-en/index.html"
+    }
+  ]
+}

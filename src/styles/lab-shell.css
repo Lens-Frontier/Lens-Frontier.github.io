@@ -1,0 +1,166 @@
+/* Shared Lens Frontier laboratory shell. */
+
+body {
+	margin: 0;
+}
+
+.shell {
+	min-width: 0;
+}
+
+.site-header {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	border-bottom: 1px solid #d9dfdc;
+	background: rgb(244 246 245 / 0.94);
+	backdrop-filter: blur(16px);
+}
+
+.site-header__inner {
+	display: flex;
+	width: min(100% - 48px, 1504px);
+	min-height: 68px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24px;
+	margin: 0 auto;
+	padding: 0;
+}
+
+.brand {
+	display: flex;
+	min-width: 0;
+	align-items: center;
+	gap: 11px;
+	color: #17201f;
+	text-decoration: none;
+}
+
+.brand-mark {
+	display: grid;
+	width: 34px;
+	height: 34px;
+	place-items: center;
+	border: 1px solid #17201f;
+	border-radius: 0;
+	background: transparent;
+	color: #17201f;
+	font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+	font-size: 11px;
+	font-weight: 620;
+}
+
+.brand-wordmark {
+	display: grid;
+}
+
+.brand-wordmark strong {
+	display: block;
+	font-size: 16px;
+	font-weight: 680;
+	line-height: 1.1;
+}
+
+.brand-wordmark small {
+	display: none;
+}
+
+.header-actions,
+.nav,
+.lang-switch {
+	display: flex;
+	align-items: center;
+}
+
+.header-actions {
+	gap: 28px;
+	margin-left: auto;
+}
+
+.nav {
+	gap: 28px;
+}
+
+.nav a,
+.lang-switch a {
+	color: #596562;
+	font-size: 13px;
+	font-weight: 560;
+	text-decoration: none;
+	transition: color 180ms ease, background 180ms ease;
+}
+
+.nav a {
+	display: inline-flex;
+	min-height: 68px;
+	align-items: center;
+	gap: 7px;
+	border-bottom: 2px solid transparent;
+}
+
+.nav a > span {
+	color: #68736f;
+	font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+	font-size: 10px;
+	font-weight: 600;
+}
+
+.nav a[aria-current='page'] {
+	border-bottom-color: #17201f;
+	color: #17201f;
+}
+
+.nav a:hover,
+.nav a:focus-visible,
+.lang-switch a:hover,
+.lang-switch a:focus-visible {
+	color: #3b5f93;
+}
+
+.lang-switch {
+	gap: 0;
+	border: 1px solid #d9dfdc;
+}
+
+.lang-switch a {
+	display: flex;
+	min-width: 36px;
+	min-height: 30px;
+	align-items: center;
+	justify-content: center;
+	padding: 0 8px;
+}
+
+.lang-switch a[aria-current='true'] {
+	background: #17201f;
+	color: #ffffff;
+}
+
+@media (max-width: 700px) {
+	.site-header__inner {
+		width: min(100% - 32px, 660px);
+	}
+
+	.nav {
+		display: none;
+	}
+}
+
+@media (max-width: 620px) {
+	.site-header__inner {
+		width: calc(100% - 28px);
+		min-height: 60px;
+	}
+
+	.brand-wordmark strong {
+		font-size: 13px;
+	}
+
+	.lang-switch a {
+		min-width: 31px;
+		min-height: 27px;
+		padding: 0 6px;
+		font-size: 12px;
+	}
+}

@@ -1,69 +1,37 @@
 ---
-import { getCollection } from 'astro:content';
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import EntryRow from '../../../components/EntryRow.astro';
-import { languages, languageFrom, ui } from '../../../lib/site';
-import { collectionNames, tagsForLanguage } from '../../../lib/content';
+import RedirectLayout from '../../../layouts/RedirectLayout.astro';
+import { languages, languageFrom, tagPath } from '../../../lib/site';
+import { tagsForLanguage } from '../../../lib/content';
 
 export async function getStaticPaths() {
+	const tagSets = Object.fromEntries(
+		await Promise.all(languages.map(async (lang) => [lang, new Set(await tagsForLanguage(lang))])),
+	) as Record<(typeof languages)[number], Set<string>>;
 	const paths = [];
 	for (const lang of languages) {
-		const allEntries = await Promise.all(collectionNames.map((name) => getCollection(name)));
-		const tags = [
-			...new Set(
-				allEntries
-					.flat()
-					.filter((entry) => !entry.data.draft && entry.data.lang === lang)
-					.flatMap((entry) => entry.data.tags ?? []),
-			),
-		];
-		paths.push(...tags.map((tag) => ({ params: { lang, tag }, props: { lang, tag } })));
+		const tags = [...tagSets[lang]];
+		paths.push(...tags.map((tag) => ({
+			params: { lang, tag },
+			props: {
+				lang,
+				tag,
+				alternatePath: Object.fromEntries(languages.map((item) => [
+					item,
+					tagSets[item].has(tag) ? `/tags/${encodeURIComponent(tag)}/` : '/tags/',
+				])),
+			},
+		})));
 	}
 	return paths;
 }
 
 const lang = languageFrom(Astro.props.lang);
-const { tag } = Astro.props;
-const labels = ui[lang].pages.tags;
-const alternatePath = Object.fromEntries(
-	await Promise.all(
-		languages.map(async (targetLang) => {
-			const tags = await tagsForLanguage(targetLang);
-			return [targetLang, tags.includes(tag) ? `/tags/${encodeURIComponent(tag)}/` : '/tags/'];
-		}),
-	),
-);
-const entriesByCollection = await Promise.all(
-	collectionNames.map(async (collection) => ({
-		collection,
-		entries: (await getCollection(collection)).filter(
-			(entry) => !entry.data.draft && entry.data.lang === lang && entry.data.tags?.includes(tag),
-		),
-	})),
-);
-const entries = entriesByCollection
-	.flatMap(({ collection, entries }) => entries.map((entry) => ({ collection, entry })))
-	.sort((a, b) => b.entry.data.date.getTime() - a.entry.data.date.getTime());
+const { tag, alternatePath } = Astro.props;
 ---
 
-<BaseLayout
-	lang={lang}
-	title={`Tag: ${tag}`}
-	description={labels.tagDescription(tag)}
-	alternatePath={alternatePath}
->
-	<header class="page-title">
-		<div>
-			<p class="eyebrow">tag</p>
-			<h1>{tag}</h1>
-		</div>
-		<p>{labels.relatedCount(entries.length)}</p>
-	</header>
-	<section class="listing">
-		<div class="entry-list">
-			{entries.map(({ entry, collection }) => (
-				<EntryRow entry={entry} collection={collection} label={collection.slice(0, -1)} lang={lang} />
-			))}
-		</div>
-	</section>
-</BaseLayout>
+<RedirectLayout
+	to={tagPath(tag, lang)}
+	title={lang === 'zh' ? `研究主题：${tag}` : `Research topic: ${tag}`}
+	{lang}
+	{alternatePath}
+/>

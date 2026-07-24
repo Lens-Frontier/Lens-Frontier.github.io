@@ -2,11 +2,13 @@ import { appendFileSync, existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import { extname, join, relative } from 'node:path';
 import * as cheerio from 'cheerio';
+import YAML from 'yaml';
 
 const root = process.cwd();
 const dist = join(root, 'dist');
 const siteUrl = process.env.SITE_URL;
 const siteBase = normalizeBase(process.env.SITE_BASE ?? '/');
+const legacySiteBase = process.env.LEGACY_SITE_BASE ? normalizeBase(process.env.LEGACY_SITE_BASE) : undefined;
 const gaMeasurementId = process.env.PUBLIC_GA_MEASUREMENT_ID;
 const pageviewEndpoint = process.env.PUBLIC_PAGEVIEW_ENDPOINT;
 const requiredFiles = [
@@ -23,6 +25,8 @@ const requiredFiles = [
 	'benchmarks/index.html',
 	'zh/benchmarks/index.html',
 	'en/benchmarks/index.html',
+	'zh/blog/methods/index.html',
+	'en/blog/methods/index.html',
 	'opinions/index.html',
 	'zh/opinions/index.html',
 	'en/opinions/index.html',
@@ -38,6 +42,11 @@ const requiredFiles = [
 	'sitemap-index.xml',
 ];
 
+if (siteBase === '/' && legacySiteBase && legacySiteBase !== '/') {
+	const legacyDirectory = legacySiteBase.slice(1, -1);
+	requiredFiles.push(`${legacyDirectory}/zh/index.html`, `${legacyDirectory}/zh/rss.xml`);
+}
+
 const skippedProtocols = /^(?:https?:|mailto:|tel:|data:|blob:|javascript:)/i;
 const unsafeInternalPath = /(?:^|\/)(?:src|node_modules)\//;
 const localizedHtmlLang = new Map([
@@ -46,6 +55,8 @@ const localizedHtmlLang = new Map([
 ]);
 const errors = [];
 const warnings = [];
+const contentRoot = join(root, 'src', 'content');
+const contentPreservationManifest = join(root, 'docs', 'content-preservation-manifest.json');
 const renderedMarkdownPatterns = [
 	{
 		name: 'strong emphasis marker',
@@ -197,6 +208,45 @@ function emitWarnings(items) {
 	}
 }
 
+async function publishedSourceArticles() {
+	const files = (await walk(contentRoot)).filter((file) => /\.(?:md|mdx)$/.test(file));
+	const articles = [];
+
+	for (const file of files) {
+		const source = await readFile(file, 'utf8');
+		const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+		if (!match) continue;
+
+		const data = YAML.parse(match[1]) ?? {};
+		if (data.draft === true) continue;
+
+		const sourceRel = relative(contentRoot, file).split('\\').join('/');
+		const [collection, ...slugParts] = sourceRel.replace(/\.(?:md|mdx)$/, '').split('/');
+		const slug = slugParts.join('/');
+		if (!collection || !slug || !localizedHtmlLang.has(data.lang)) continue;
+
+		articles.push({ collection, slug, lang: data.lang, title: data.title });
+	}
+
+	return articles;
+}
+
+async function preservedArticles() {
+	if (!existsSync(contentPreservationManifest)) {
+		errors.push('Content preservation manifest is missing: docs/content-preservation-manifest.json');
+		return [];
+	}
+
+	try {
+		const manifest = JSON.parse(await readFile(contentPreservationManifest, 'utf8'));
+		if (!Array.isArray(manifest.articles)) throw new Error('articles must be an array');
+		return manifest.articles;
+	} catch (error) {
+		errors.push(`Content preservation manifest is invalid: ${error instanceof Error ? error.message : String(error)}`);
+		return [];
+	}
+}
+
 for (const file of requiredFiles) {
 	if (!existsSync(join(dist, file))) {
 		errors.push(`Required build output is missing: dist/${file}`);
@@ -286,6 +336,59 @@ if (existsSync(rss)) {
 	const text = await readFile(rss, 'utf8');
 	if (!text.includes('<rss') || !text.includes('<channel>')) {
 		errors.push('RSS output is not a valid RSS channel: dist/rss.xml');
+	}
+}
+
+for (const article of await publishedSourceArticles()) {
+	const localizedRel = `${article.lang}/blog/${article.slug}/index.html`;
+	const previousLocalizedRel = `${article.lang}/${article.collection}/${article.slug}/index.html`;
+	const legacyRel = `${article.collection}/${article.slug}/index.html`;
+	const localizedFile = join(dist, localizedRel);
+	const previousLocalizedFile = join(dist, previousLocalizedRel);
+	const legacyFile = join(dist, legacyRel);
+
+	if (!existsSync(localizedFile)) {
+		errors.push(`Published source article is missing its localized page: dist/${localizedRel}`);
+		continue;
+	}
+	if (!existsSync(legacyFile)) {
+		errors.push(`Published source article is missing its legacy redirect: dist/${legacyRel}`);
+	}
+	if (!existsSync(previousLocalizedFile)) {
+		errors.push(`Published source article is missing its previous localized redirect: dist/${previousLocalizedRel}`);
+	}
+
+	const html = await readFile(localizedFile, 'utf8');
+	const $ = cheerio.load(html);
+	const expectedArticleId = `${article.collection}/${article.slug}`;
+	if ($('[data-analytics-article-id]').attr('data-analytics-article-id') !== expectedArticleId) {
+		errors.push(`Article analytics id changed for ${localizedRel}; expected ${expectedArticleId}`);
+	}
+
+	const localizedRss = join(dist, article.lang, 'rss.xml');
+	if (!existsSync(localizedRss)) {
+		errors.push(`Localized RSS is missing for article: dist/${localizedRel}`);
+		continue;
+	}
+	const rssText = await readFile(localizedRss, 'utf8');
+	const expectedRssPath = `${article.lang}/blog/${article.slug}/`;
+	if (!rssText.includes(expectedRssPath)) {
+		errors.push(`Published source article is missing from ${article.lang} RSS: ${expectedRssPath}`);
+	}
+}
+
+for (const article of await preservedArticles()) {
+	const source = typeof article.source === 'string' ? article.source : '';
+	const route = typeof article.route === 'string' ? article.route : '';
+	if (!source || !route || source.startsWith('/') || route.startsWith('/') || source.includes('..') || route.includes('..')) {
+		errors.push(`Unsafe preserved article entry: ${JSON.stringify(article)}`);
+		continue;
+	}
+	if (!existsSync(join(contentRoot, source))) {
+		errors.push(`Preserved article source is missing: src/content/${source}`);
+	}
+	if (!existsSync(join(dist, route))) {
+		errors.push(`Preserved article route is missing: dist/${route}`);
 	}
 }
 

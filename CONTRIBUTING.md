@@ -1,16 +1,23 @@
-# Lens Frontier Blog 投稿规范
+# Lens Frontier 投稿与数据更新规范
 
-Lens Frontier Blog 默认通过 fork + Pull Request 投稿。维护者可以为紧急修复直接提交，但论文阅读分享、benchmark 观察和观点文章都走 fork PR，这样方便讨论、预览和留下修改记录。
+Lens Frontier 默认通过 fork + Pull Request 接收文章投稿和 Benchmark 数据更新。维护者可以为紧急修复直接提交，但普通内容与评测数据都走 PR，方便讨论、预览、校验和保留修订记录。
+
+## 两类贡献
+
+- **研究发布**：团队论文、Benchmark 方法文章和评测洞察，保存在 `src/content/`。
+- **Bench 数据**：能力主张和目录保存在 `src/lib/benchmarkData.ts`，审核后的榜单保存在 `src/lib/benchmarkResults.ts`，Task、Method、Evidence 和 Findings 保存在 `src/lib/benchmarkDetailData.ts`。
+
+文章投稿按下文流程执行。新增或更新 Bench 时，请先阅读 [Benchmark 内页内容标准](./docs/BENCHMARK_PAGE_STANDARD.md) 和 [Adding Benchmarks](./docs/ADDING_BENCHMARKS.md)。PR 必须说明公开数据来源与许可、Benchmark 和协议版本、评分口径、运行次数、证据状态和已知限制。不要把 Bench Data Card 当成一篇 Blog 文章重复维护。
 
 ## 内容要求
 
-Lens Frontier 希望长期沉淀高质量的论文阅读分享、benchmark 观察和观点文章。更新频率不是第一目标；我们更在意内容是否值得被后来的人重新打开，是否能帮助读者看清一个问题、一个评测、一篇论文或一个判断的边界。
+Lens Frontier 希望长期发布高质量的研究论文、benchmark 方法文章和评测洞察。更新频率不是第一目标；我们更在意研究问题是否明确、证据是否可靠、版本是否可追溯，以及内容能否帮助读者理解一个模型能力结论的适用边界。
 
 投稿时请尽量满足这些要求：
 
-- 有明确问题意识：文章最好围绕一个具体问题、现象、疑问或判断展开，而不是简单复述论文摘要、榜单结果或新闻。
+- 有明确问题意识：内容应围绕一个具体研究问题、评测现象或判断展开，而不是简单复述榜单结果、外部论文摘要或新闻。
 - 有证据和上下文：重要判断需要说明来源、实验设置、数据口径、benchmark 版本、适用范围和可能的偏差。
-- 有作者自己的思考：观点可以浅，但不要只搬运结论；请写出你认为值得关注、值得怀疑或值得继续讨论的地方。
+- 有团队自己的分析：不要只搬运结论；请说明我们获得了什么证据、如何解释，以及哪些问题仍未解决。
 - 有克制的表达：避免标题党、过度拔高、没有依据的断言，以及把单个 benchmark 结果直接扩展成宽泛结论。
 - 有审美和可读性：结构清楚，段落有层次，图表和截图确实服务于论点；不为了堆材料而堆材料。
 - 有长期价值：优先发布能沉淀方法、经验、争议、失败案例或判断框架的内容。暂时说不完整也可以，但要诚实标注不确定性。
@@ -19,7 +26,7 @@ Lens Frontier 希望长期沉淀高质量的论文阅读分享、benchmark 观�
 
 ## 投稿流程
 
-1. Fork `Lens-Frontier/blog` 到自己的 GitHub 账号下。
+1. Fork 本仓库到自己的 GitHub 账号下。
 2. 在自己的 fork 里从 `main` 拉新分支，分支名建议使用 `post/<slug>`。
 3. 在对应内容目录中新建 Markdown：
    - `src/content/papers/<slug>.md`
@@ -29,26 +36,37 @@ Lens Frontier 希望长期沉淀高质量的论文阅读分享、benchmark 观�
 5. 如需文章图片，在 `src/assets/posts/<collection>/<slug>/` 创建同名资源目录；只保留这一份，不要同时放到 `public/assets/posts/`。
 6. 作者头像默认可由 GitHub ID 自动读取；如需自定义头像，再放到 `public/assets/authors/`。
 7. 本地运行 `pnpm check`，确认语法、内容、资产、构建和产物检查通过。
-8. 从 fork 分支向 `Lens-Frontier/blog` 提交 PR，填写 PR 模板。
+8. 从 fork 分支向上游仓库提交 PR，填写 PR 模板。
 
-如果使用 Codex、Claude Code 或其他 coding agent 辅助投稿，请先让 agent 读取本仓库的 `.agents/skills/lens-frontier-post/SKILL.md`，按统一的文章模板、作者信息、资产目录和检查流程操作。Agent 也默认走 fork PR：从个人 fork 新建分支，向 `Lens-Frontier/blog` 开新的 PR；即使维护者有写权限，也不要让 agent 直接把普通文章改动推到主仓库。
+Bench 数据更新建议使用 `bench/<slug>` 分支名。新增项目至少需要公开目录项和详情数据；发布榜单时还必须提供按分数降序排列的机器可读结果，并为每条结果标记 `verified`、`reviewed` 或 `pending`。可以使用 `templates/benchmark-results.csv`，不能只提供截图。开发阶段生成的占位分数不得作为正式结果。页面视觉和交互可以针对 Bench 完善，但 Overview、Leaderboard、Tasks、Method、Evidence、Analysis、Limits 与 Versions 的语义应遵循内页标准。PR 预览应重点检查首页筛选、Benchmark Library 和中英文 Bench 详情路由。
+
+如果使用 Codex、Claude Code 或其他 coding agent，文章投稿可以读取 `.agents/skills/lens-frontier-post/SKILL.md`。普通内容和数据更新仍然默认走 fork PR，并经过 CI 与维护者 review。
 
 PR 标题建议使用能直接说明变更范围的格式：
 
 - 文章：`post: <文章标题>`
+- Bench：`bench: <新增或更新内容>`
 - 文档：`docs: <修改内容>`
 - 站点或样式：`site: <修改内容>`
 - CI 或工具：`chore: <修改内容>`
 
 每个 PR 都会自动触发 GitHub Actions CI。CI 分成 `syntax` 和 `check` 两个 job：`syntax` 负责 workflow / Astro / TypeScript / Worker 语法，`check` 负责 Markdown、内容规范、中文引号配对、资产硬限制、analytics smoke、生产构建和构建产物检查。中文引号开闭错误会阻塞 CI；图片推荐大小、宽度和格式会在 CI 日志里提示，它们用于提醒优化，不作为硬性阻断。两个 job 都通过后，PR 才适合进入 review/merge。
 
-CI 成功后，机器人会在 PR comment 中写入预览链接。预览页和正式站点使用同一套 Astro 构建，只是 URL base 不同，会展示 PR 当前 commit 的完整站点，包括首页、文章页、Timeline、Tags、About 和 RSS。预览地址格式为：
+CI 成功后，机器人会在 PR comment 中写入预览链接。预览页和正式站点使用同一套 Astro 构建，只是 URL base 不同，会展示 PR 当前 commit 的完整站点，包括首页、文章页、Timeline、Tags、About 和 RSS。PR 更新时会生成新的 commit 快照链接，并更新同一条 bot comment；仓库改名后预览根路径可能变化，应以 comment 中的地址为准。
 
-```txt
-https://lens-frontier.github.io/blog/pr-preview/pr-<PR 编号>/<commit short hash>/
-```
+PR 预览只写入 commit 隔离的 `gh-pages/pr-preview/` 目录，不会替换正式站点根目录，也不接入正式 GA 或阅读量。正式站点不再随 `main` push 自动更新；只有维护者手动运行 `Deploy to GitHub Pages`、填写待发布 ref 并确认后才会部署。完整步骤见 [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)。
 
-PR 更新时会生成新的 commit 快照链接，并更新同一条 bot comment。
+## 全面升级 PR
+
+需要先 review、暂不发布的站点升级，按以下方式提交：
+
+1. 从最新 `main` 新建 `site/<scope>` 分支，不直接在 `main` 开发。
+2. 保留 `src/content/` 原有文章、slug、frontmatter、图片和兼容路由；前端改造不迁移或删除正式文章。
+3. 本地运行 `pnpm check`，再从分支发 PR。
+4. 使用 PR 的 commit 隔离预览做视觉、移动端、深色模式和内容回归 review。
+5. 在 PR 获得确认前不合入；即使合入，正式部署仍需单独手动确认。
+
+站点升级、Benchmark 数据和大规模文章迁移尽量拆成不同 PR，方便 reviewer 判断视觉回归、数据真实性和内容变化。
 
 更新已有 PR 或继续使用旧分支前，请先确认 PR 仍然处于 open 状态，并且 PR head 仍指向当前分支。可以用：
 
@@ -97,7 +115,7 @@ src/assets/posts/papers/swe-bench-verified/
 
 ## Markdown Frontmatter
 
-所有文章都需要包含 `title`、`date`、`summary`、`authors`、`tags`。`authors` 是本站作者，不是论文原作者；每个作者至少填写 `id`、`name` 或 `github` 之一。
+所有文章都需要包含 `title`、`date`、`summary`、`authors`、`tags`。`authors` 控制站内署名与贡献者展示；论文的正式署名顺序写在 `paperAuthors`。每个站内贡献者至少填写 `id`、`name` 或 `github` 之一。
 
 `updated` 是可选字段。小的错别字、排版和链接修复不一定需要写；如果修订影响事实口径、判断边界或结论，请加上：
 
@@ -109,19 +127,19 @@ updated: 2026-05-23
 
 `lang` 用来决定文章进入哪个语言路由：
 
-- `lang: "zh"`：文章生成在 `/zh/<collection>/<slug>/`
-- `lang: "en"`：文章生成在 `/en/<collection>/<slug>/`
+- `lang: "zh"`：文章生成在 `/zh/blog/<slug>/`
+- `lang: "en"`：文章生成在 `/en/blog/<slug>/`
 - 不强制同步翻译。中文文章可以只发中文，英文文章也可以只发英文。
 - 如果之后补翻译，建议两篇文章使用相同的 `translationKey`。站点的中英切换会优先跳到同一篇文章的译文；如果目标语言没有译文，则回到目标语言的对应栏目页。
 
-论文阅读分享示例：
+团队论文示例：
 
 ```md
 ---
 title: "SWE-bench Verified"
 lang: "zh"
 date: 2026-05-19
-summary: "一句话说明这篇分享的重点。"
+summary: "一句话说明论文研究问题、方法或主要贡献。"
 authors:
   - name: "Your Name"
     github: "your-github-id"
@@ -132,9 +150,11 @@ codeUrl: "https://github.com/example/repo"
 benchmarks: ["SWE-bench"]
 tasks: ["coding-agent"]
 tags: ["evaluation", "coding-agent"]
-status: "read"
+status: "preprint"
 ---
 ```
+
+论文状态使用 `working`、`preprint`、`accepted` 或 `published`，分别对应工作论文、预印本、已接收和已发表。
 
 Benchmark 观察示例：
 
@@ -156,7 +176,7 @@ tags: ["benchmark", "evaluation"]
 ---
 ```
 
-观点文章示例：
+评测洞察示例：
 
 ```md
 ---
@@ -306,16 +326,16 @@ GitHub Actions 还会额外运行 workflow lint，用来检查 `.github/workflow
 - 标题清楚，不只是论文名或营销式标题。
 - `summary` 能独立说明文章价值。
 - 外部链接可以打开。
-- 论文类文章区分了论文作者和本站作者。
+- 论文类文章区分了页面贡献者 `authors` 与正式署名顺序 `paperAuthors`。
 - benchmark 文章说明了 task、metric、version、known issues。
 - 图片有来源或是自己绘制/截图，且没有版权风险。
-- 文章不是简单搬运摘要，包含个人判断、疑问或复盘。
+- 研究发布不是摘要搬运，包含团队的方法、证据、限制或可复核结论。
 
 ## Review 规则
 
 PR 至少需要一位维护者 review 后合并。维护者主要看：
 
-- 内容是否符合 Lens Frontier 的主题：论文阅读分享、benchmark 相关观察，以及围绕这些问题的一些浅薄观点。
+- 内容是否符合 Lens Frontier 的主题：团队研究论文、benchmark 方法与版本说明，以及有证据支持的评测分析。
 - 事实、引用和链接是否可靠。
 - 图片和资产是否合规。
 - Markdown frontmatter 是否能通过构建。

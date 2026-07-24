@@ -7,6 +7,7 @@ summary: "搜索智能体训练需要难度适中的题：模型不能秒解，�
 authors:
   - name: "渠剑颖"
     github: "qjyyy77"
+    avatar: "/assets/authors/qjyyy77.jpg"
 stance: "高难度搜索题的难度不应只看题面，而应由搜索智能体的真实求解行为定义。"
 tags: ["benchmark"]
 ---
@@ -45,20 +46,20 @@ tags: ["benchmark"]
 | 藏坏了 | 人进了黑房间，线索全没了 | 关键约束被删掉，答案不唯一，或者公开网页上无法稳定验证 | 风险高，不能直接进训练 |
 | 刚好难 | 看不到人，但能沿痕迹找 | 直达题目被挡住，但仍能先找中间实体，再排除候选、交叉验证 | 最适合训练搜索智能体 |
 
-<div style="border:1px solid #d0d7de;border-radius:8px;padding:14px 16px;margin:16px 0;background:#ffffff;">
-  <div style="font-weight:600;margin-bottom:10px;">我们真正想要的难度区间</div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;font-size:14px;line-height:1.6;">
-    <div style="padding:10px;border-top:4px solid #d1242f;background:#fff7f7;">
+<div class="article-inline-panel">
+  <strong class="article-inline-panel__title">我们真正想要的难度区间</strong>
+  <div class="article-inline-grid">
+    <div class="article-inline-card is-danger">
       <b>太简单</b><br/>
       通过率 = 1.0<br/>
       5 次全对，继续改
     </div>
-    <div style="padding:10px;border-top:4px solid #1f883d;background:#f0fff4;">
+    <div class="article-inline-card is-success">
       <b>刚好难</b><br/>
       0.2 <= 通过率 <= 0.8<br/>
       有时答对、有时走偏，保留
     </div>
-    <div style="padding:10px;border-top:4px solid #bf8700;background:#fff8e6;">
+    <div class="article-inline-card is-warning">
       <b>太难或改坏</b><br/>
       通过率 = 0<br/>
       5 次全错，丢弃或复核
@@ -100,7 +101,7 @@ tags: ["benchmark"]
 - Critic 不只是判对错，还要把求解轨迹转成通过率、决策和下一轮改写建议。
 
 流程图：
-![Hardener-Solver-Critic 多智能体难度增强流程图](../../assets/posts/opinions/browsecomp-query-hardening/image.png)
+![Hardener-Solver-Critic 多智能体难度增强流程图](../../assets/posts/opinions/browsecomp-query-hardening/image.webp)
 
 | 模块 | 输入 | 输出 | 真正负责的事 |
 | --- | --- | --- | --- |
@@ -140,18 +141,18 @@ BrowseComp 是 OpenAI 在 2025 年发布的搜索能力基准。它的题目由�
 
 难度增强要做的，就是把这些"长得像难题但搜起来不难"的合成题，推到真正需要多步搜索才能解出的难度。
 
-<div style="border:1px solid #d0d7de;border-radius:8px;padding:14px 16px;margin:16px 0;background:#f6f8fa;">
-  <div style="font-weight:600;margin-bottom:10px;">难度增强在数据流程中的位置</div>
-  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px;line-height:1.6;">
-    <div style="padding:8px 10px;border:1px solid #d0d7de;border-radius:6px;background:white;">种子实体</div>
-    <div>→</div>
-    <div style="padding:8px 10px;border:1px solid #d0d7de;border-radius:6px;background:white;">采样路径<br/>构造事实链</div>
-    <div>→</div>
-    <div style="padding:8px 10px;border:1px solid #d0d7de;border-radius:6px;background:white;">转写成间接描述式<br/>题目-答案对</div>
-    <div>→</div>
-    <div style="padding:8px 10px;border:2px solid #1f883d;border-radius:6px;background:#f0fff4;"><b>难度增强与筛选</b><br/>Hardener-Solver-Critic</div>
-    <div>→</div>
-    <div style="padding:8px 10px;border:1px solid #d0d7de;border-radius:6px;background:white;">高难度题目<br/>用于训练</div>
+<div class="article-inline-panel article-inline-panel--flow">
+  <strong class="article-inline-panel__title">难度增强在数据流程中的位置</strong>
+  <div class="article-inline-flow">
+    <div class="article-inline-node">种子实体</div>
+    <span aria-hidden="true">→</span>
+    <div class="article-inline-node">采样路径<br/>构造事实链</div>
+    <span aria-hidden="true">→</span>
+    <div class="article-inline-node">转写成间接描述式<br/>题目-答案对</div>
+    <span aria-hidden="true">→</span>
+    <div class="article-inline-node is-accent"><b>难度增强与筛选</b><br/>Hardener-Solver-Critic</div>
+    <span aria-hidden="true">→</span>
+    <div class="article-inline-node">高难度题目<br/>用于训练</div>
   </div>
 </div>
 

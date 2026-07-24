@@ -1,38 +1,139 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import EntryRow from '../../../components/EntryRow.astro';
-import { languages, languageFrom, ui } from '../../../lib/site';
-import { publishedCollection } from '../../../lib/content';
+import '../../../styles/benchmark-library.css';
+import {
+	benchmarkCatalog,
+	catalogByCategory,
+	leaderboardAssets,
+	statusLabels,
+} from '../../../lib/benchmarkData';
+import { languages, languageFrom, localizedPath } from '../../../lib/site';
 
 export function getStaticPaths() {
 	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
 }
 
 const lang = languageFrom(Astro.props.lang);
-const labels = ui[lang].pages.benchmarks;
-const benchmarks = await publishedCollection('benchmarks', lang);
+const catalog = benchmarkCatalog(lang);
+const groups = catalogByCategory(lang);
+const boards = leaderboardAssets(lang);
+const statuses = statusLabels(lang);
+const benchPath = (id: string) => localizedPath(lang, `/bench/${id}/`);
+const dataCardPath = (id: string) => localizedPath(lang, `/bench/${id}/data/`);
+
+const copy =
+	lang === 'zh'
+		? {
+				title: 'Benchmark Library',
+				body: '每个 Benchmark 都是一项独立研究：一个能力主张，一套任务与协议，一张榜单，以及一份持续更新的 Data Card。',
+				total: '项目总数',
+				live: '公开榜单',
+				domains: '能力域',
+				filter: '按能力域筛选',
+				all: '全部',
+				benchmark: 'Benchmark',
+				capability: '能力主张',
+				source: '任务来源',
+				judge: '评审方式',
+				status: '状态',
+				entry: '查看',
+				openBenchmark: '完整 Benchmark',
+				openDataCard: 'Data Card',
+				emptyTitle: '暂无公开 Benchmark',
+				emptyBody: 'Benchmark 只有在公开来源、许可、版本与证据通过发布审核后才会出现在这里。',
+				readBlog: '阅读现有博客',
+			}
+		: {
+				title: 'Benchmark Library',
+				body: 'Every benchmark is an independent research program: one capability claim, one task and protocol system, one leaderboard, and one evolving Data Card.',
+				total: 'Projects',
+				live: 'Public boards',
+				domains: 'Domains',
+				filter: 'Filter by domain',
+				all: 'All',
+				benchmark: 'Benchmark',
+				capability: 'Capability claim',
+				source: 'Task source',
+				judge: 'Judge',
+				status: 'Status',
+				entry: 'Open',
+				openBenchmark: 'Full benchmark',
+				openDataCard: 'Data Card',
+				emptyTitle: 'No public benchmarks yet',
+				emptyBody: 'A benchmark appears here only after its public sources, license, version, and evidence pass publication review.',
+				readBlog: 'Read the current blog',
+			};
 ---
 
-<BaseLayout lang={lang} title={labels.title} description={labels.description} alternatePath="/benchmarks/">
-	<header class="page-title">
-		<div>
-			<p class="eyebrow">{labels.eyebrow}</p>
-			<h1>{labels.title}</h1>
-		</div>
-		<p>{labels.body}</p>
-	</header>
-	<section class="listing">
-		<div class="entry-list">
-			{benchmarks.length ? (
-				benchmarks.map((entry) => (
-					<EntryRow entry={entry} collection="benchmarks" label="benchmark" lang={lang} />
-				))
-			) : (
-				<div class="empty-state">
-					<p>{labels.emptyTitle}</p>
-					<span>{labels.emptyBody}</span>
-				</div>
-			)}
-		</div>
-	</section>
+<BaseLayout lang={lang} title={copy.title} description={copy.body} alternatePath="/benchmarks/">
+	<div class="benchmark-library" data-benchmark-library>
+		<header class="benchmark-library__hero">
+			<div>
+				<h1>{copy.title}</h1>
+				<p>{copy.body}</p>
+			</div>
+			<dl>
+				<div><dt>{copy.total}</dt><dd>{String(catalog.length).padStart(2, '0')}</dd></div>
+				<div><dt>{copy.live}</dt><dd>{String(boards.length).padStart(2, '0')}</dd></div>
+				<div><dt>{copy.domains}</dt><dd>{String(groups.length).padStart(2, '0')}</dd></div>
+			</dl>
+		</header>
+
+		{catalog.length > 0 ? <>
+		<nav class="benchmark-library__filters" aria-label={copy.filter}>
+			<span>{copy.filter}</span>
+			<button type="button" class="is-active" data-library-filter="all" aria-pressed="true">{copy.all}</button>
+			{groups.map((group) => (
+				<button type="button" data-library-filter={group.category} aria-pressed="false">
+					{group.label}<small>{String(group.assets.length).padStart(2, '0')}</small>
+				</button>
+			))}
+		</nav>
+
+		<section class="benchmark-library__index" aria-label={copy.title}>
+			<header aria-hidden="true">
+				<span>{copy.benchmark}</span><span>{copy.capability}</span><span>{copy.source}</span><span>{copy.judge}</span><span>{copy.status}</span><span>{copy.entry}</span>
+			</header>
+			{catalog.map((asset, index) => (
+				<article data-library-row={asset.category}>
+					<div><span>{String(index + 1).padStart(2, '0')}</span><a href={benchPath(asset.id)}><strong>{asset.name}</strong></a></div>
+					<span>{asset.capability}</span>
+					<span>{asset.source}</span>
+					<span>{asset.judgeMode}</span>
+					<small><i aria-hidden="true"></i>{statuses[asset.status]}</small>
+					<nav aria-label={`${asset.name} ${copy.entry}`}>
+						<a href={benchPath(asset.id)}>{copy.openBenchmark}</a>
+						<a href={dataCardPath(asset.id)}>{copy.openDataCard}</a>
+					</nav>
+				</article>
+			))}
+		</section>
+		</> : (
+			<section class="benchmark-library__empty" aria-labelledby="benchmark-library-empty-title">
+				<span>{lang === 'zh' ? '发布状态' : 'Publication status'}</span>
+				<h2 id="benchmark-library-empty-title">{copy.emptyTitle}</h2>
+				<p>{copy.emptyBody}</p>
+				<a href={localizedPath(lang, '/blog/')}>{copy.readBlog}<span aria-hidden="true">↗</span></a>
+			</section>
+		)}
+	</div>
+
+	<script>
+		const root = document.querySelector<HTMLElement>('[data-benchmark-library]');
+		if (root) {
+			const buttons = [...root.querySelectorAll<HTMLButtonElement>('[data-library-filter]')];
+			const rows = [...root.querySelectorAll<HTMLElement>('[data-library-row]')];
+			buttons.forEach((button) => {
+				button.addEventListener('click', () => {
+					const filter = button.dataset.libraryFilter || 'all';
+					buttons.forEach((item) => {
+						const active = item === button;
+						item.classList.toggle('is-active', active);
+						item.setAttribute('aria-pressed', String(active));
+					});
+					rows.forEach((row) => { row.hidden = filter !== 'all' && row.dataset.libraryRow !== filter; });
+				});
+			});
+		}
+	</script>
 </BaseLayout>

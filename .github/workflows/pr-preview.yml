@@ -60,7 +60,10 @@ jobs:
           }
 
           const expectedDestination = `pr-preview/pr-${prNumber}/${shortSha}`;
-          const expectedUrl = `https://lens-frontier.github.io/blog/${expectedDestination}/`;
+          const owner = process.env.GITHUB_REPOSITORY.split('/')[0].toLowerCase();
+          const repo = process.env.GITHUB_REPOSITORY.split('/')[1];
+          const siteBase = repo.toLowerCase() === `${owner}.github.io` ? '/' : `/${repo}/`;
+          const expectedUrl = `https://${owner}.github.io${siteBase}${expectedDestination}/`;
 
           if (destinationDir !== expectedDestination) {
             throw new Error(`Invalid preview destination: expected ${expectedDestination}, got ${destinationDir}`);

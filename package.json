@@ -1,5 +1,5 @@
 {
-  "name": "blog",
+  "name": "lens-frontier-site",
   "type": "module",
   "version": "0.0.1",
   "packageManager": "pnpm@10.12.3",
@@ -9,9 +9,10 @@
   "scripts": {
     "dev": "astro dev",
     "clean:astro": "rm -rf .astro node_modules/.astro dist",
-    "build": "astro build",
+    "build": "astro build && node scripts/write-legacy-base-redirects.mjs",
     "check:markdown": "markdownlint-cli2",
     "check:content": "node scripts/check-content.mjs",
+    "check:bench": "tsx scripts/check-benchmark-data.ts",
     "check:sensitive": "node scripts/check-sensitive-content.mjs",
     "check:assets": "node scripts/check-assets.mjs",
     "check:types": "astro check",
@@ -29,13 +30,17 @@
   "dependencies": {
     "@astrojs/rss": "^4.0.18",
     "@astrojs/sitemap": "^3.7.2",
-    "astro": "^6.3.3"
+    "@lobehub/icons-static-svg": "^1.93.0",
+    "astro": "^6.3.3",
+    "echarts": "^6.1.0",
+    "mermaid": "11.16.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
     "cheerio": "^1.2.0",
     "markdownlint-cli2": "^0.22.1",
     "sharp": "^0.34.5",
+    "tsx": "^4.20.6",
     "typescript": "^6.0.3",
     "yaml": "^2.9.0"
   }

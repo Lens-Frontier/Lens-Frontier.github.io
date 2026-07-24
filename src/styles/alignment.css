@@ -1,0 +1,1088 @@
+/*
+ * Shared layout and typography contract.
+ *
+ * Page styles own their composition; this layer keeps every public template
+ * on the same outer grid and the same readable type scale.
+ */
+
+:root {
+	--lf-page-max: 1440px;
+	--lf-page-inset: 64px;
+	--lf-page-width: min(var(--lf-page-max), calc(100% - var(--lf-page-inset)));
+	--lf-reading-shell: 1200px;
+	--lf-article-shell: 1120px;
+	--lf-article-head: 980px;
+	--lf-reading-column: 800px;
+	--lf-font-sans: Arial, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', sans-serif;
+	--lf-font-mono: ui-monospace, 'SFMono-Regular', 'SF Mono', Menlo, Consolas, monospace;
+	--lf-type-display: 56px;
+	--lf-type-page: 52px;
+	--lf-type-section: 40px;
+	--lf-type-subsection: 26px;
+	--lf-type-body: 16px;
+	--lf-type-small: 14px;
+	--lf-type-meta: 12px;
+	--lf-leading-display: 1.06;
+	--lf-leading-title: 1.12;
+	--lf-leading-body: 1.72;
+}
+
+html {
+	font-size: 16px;
+	text-size-adjust: 100%;
+}
+
+body {
+	font-family: var(--lf-font-sans);
+	font-size: var(--lf-type-body);
+	line-height: 1.5;
+}
+
+body :where(h1, h2, h3, h4, p, dl, dd) {
+	letter-spacing: 0;
+}
+
+body .site-header .site-header__inner {
+	width: var(--lf-page-width);
+	min-height: 70px;
+}
+
+body .site-header .brand {
+	gap: 12px;
+}
+
+body .site-header .brand-mark {
+	width: 36px;
+	height: 36px;
+	font-size: 11px;
+}
+
+body .site-header .brand-wordmark strong {
+	font-family: var(--lf-font-sans);
+	font-size: 16px;
+	font-weight: 680;
+	line-height: 1.1;
+}
+
+body .site-header .nav {
+	gap: 30px;
+}
+
+body .site-header .nav a {
+	min-height: 70px;
+	font-size: 13px;
+	font-weight: 620;
+}
+
+body .site-header .nav a > span {
+	font-size: 10px;
+}
+
+body .site-header .lang-switch a {
+	min-height: 30px;
+	font-size: 12px;
+}
+
+body .site-header .mobile-nav {
+	position: relative;
+	display: none;
+}
+
+body .site-header .mobile-nav summary {
+	display: flex;
+	min-width: 48px;
+	min-height: 34px;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid #bac4c0;
+	background: #fff;
+	color: #17201f;
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 650;
+	list-style: none;
+}
+
+body .site-header .mobile-nav summary::-webkit-details-marker {
+	display: none;
+}
+
+body .site-header .mobile-nav[open] summary {
+	border-color: #17201f;
+	background: #17201f;
+	color: #fff;
+}
+
+body .site-header .mobile-nav > nav {
+	position: absolute;
+	top: calc(100% + 10px);
+	right: 0;
+	display: grid;
+	width: min(248px, calc(100vw - 32px));
+	border: 1px solid #bac4c0;
+	background: #fff;
+	box-shadow: 0 18px 44px rgb(23 32 31 / 0.14);
+}
+
+body .site-header .mobile-nav > nav a {
+	display: grid;
+	grid-template-columns: 28px minmax(0, 1fr);
+	align-items: center;
+	min-height: 50px;
+	padding: 0 16px;
+	border-bottom: 1px solid #d9dfdc;
+	color: #17201f;
+	text-decoration: none;
+}
+
+body .site-header .mobile-nav > nav a:last-child {
+	border-bottom: 0;
+}
+
+body .site-header .mobile-nav > nav a[aria-current='page'],
+body .site-header .mobile-nav > nav a:hover,
+body .site-header .mobile-nav > nav a:focus-visible {
+	background: #eef2fa;
+	color: #3b5f93;
+}
+
+body .site-header .mobile-nav > nav a span {
+	font-family: var(--lf-font-mono);
+	font-size: 10px;
+}
+
+body .site-header .mobile-nav > nav a strong {
+	font-size: 14px;
+	font-weight: 650;
+}
+
+/* Homepage */
+body:has(.observatory-home) .site-header .site-header__inner,
+body .obs-intro,
+body .chart-lab,
+body .cap-atlas,
+body .obs-release-board,
+body .obs-cards,
+body .obs-journal {
+	width: var(--lf-page-width);
+}
+
+body .observatory-home {
+	--obs-container: var(--lf-page-max);
+	font-family: var(--lf-font-sans);
+}
+
+body .obs-intro {
+	grid-template-columns: minmax(0, 1.28fr) minmax(340px, 0.72fr);
+	gap: 64px;
+	padding: 52px 0 42px;
+}
+
+body .obs-intro__title h1 {
+	max-width: 14.5em;
+	font-size: var(--lf-type-display);
+	font-weight: 560;
+	line-height: var(--lf-leading-display);
+}
+
+body .obs-intro__statement {
+	padding-left: 32px;
+}
+
+body .obs-intro__statement > p {
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .obs-kicker,
+body .obs-release span,
+body .obs-release b {
+	font-family: var(--lf-font-mono);
+	font-size: 11px;
+}
+
+body .chart-lab {
+	margin-bottom: 104px;
+}
+
+body .chart-lab__compact-head {
+	min-height: 108px;
+	padding: 22px 24px 22px 28px;
+}
+
+body .chart-lab__compact-head h2 {
+	font-size: var(--lf-type-subsection);
+	line-height: 1.18;
+}
+
+body .chart-lab__compact-head p {
+	font-size: var(--lf-type-small);
+	line-height: 1.58;
+}
+
+body :where(
+	.chart-lab__mode-switch button,
+	.chart-lab__compact-actions > button,
+	.chart-lab__filter-section-title strong,
+	.chart-lab__filter-presets button,
+	.chart-lab__board-list strong,
+	.chart-lab__model-list label,
+	.chart-lab__signal-list > button > p,
+	.chart-lab__ranking-plot > header span,
+	.chart-lab__ranking-plot > header strong,
+	.chart-lab__stage > footer > span,
+	.chart-lab__stage > footer small,
+	.chart-lab__stage > footer a
+) {
+	font-size: 12px;
+}
+
+body :where(
+	.chart-lab__compact-actions > button small,
+	.chart-lab__filter-popover > header small,
+	.chart-lab__filter-section-title small,
+	.chart-lab__search span,
+	.chart-lab__board-list small,
+	.chart-lab__board-list em,
+	.chart-lab__model-list small,
+	.chart-lab__selection-dock > div:first-child span,
+	.chart-lab__selection-dock > div:first-child strong,
+	.chart-lab__selection-list button,
+	.chart-lab__selection-dock > button,
+	.chart-lab__bench-signal > header span,
+	.chart-lab__bench-signal > header small,
+	.chart-lab__signal-list > button > span,
+	.chart-lab__signal-list > button > small,
+	.chart-lab__ranking-plot > header span small
+) {
+	font-size: 11px;
+}
+
+body .obs-section-heading {
+	grid-template-columns: minmax(0, 1.2fr) minmax(340px, 0.8fr);
+	column-gap: 72px;
+	margin-bottom: 48px;
+	padding-top: 72px;
+}
+
+body .obs-section-heading h2,
+body .obs-method__statement h2,
+body .obs-journal__head h2 {
+	font-size: var(--lf-type-section);
+	font-weight: 560;
+	line-height: var(--lf-leading-title);
+}
+
+body .obs-section-heading > p,
+body .obs-method__statement > p,
+body .obs-journal__head p {
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .obs-card-index h3 {
+	font-size: 24px;
+	line-height: 1.2;
+}
+
+body .obs-card-index > a.is-featured h3 {
+	font-size: 32px;
+}
+
+body .obs-card-index > a > p,
+body .obs-card-index dd,
+body .obs-card-index footer strong,
+body .obs-journal__list > a > p,
+body .obs-journal__list footer strong,
+body .obs-method__steps p {
+	font-size: 13px;
+	line-height: 1.58;
+}
+
+body .obs-journal__list h3 {
+	font-size: 18px;
+}
+
+body .obs-method {
+	padding-right: max(32px, calc((100% - var(--lf-page-max)) / 2));
+	padding-left: max(32px, calc((100% - var(--lf-page-max)) / 2));
+}
+
+/* Benchmark library */
+body .benchmark-library {
+	width: var(--lf-page-width);
+	padding: 72px 0 112px;
+	font-family: var(--lf-font-sans);
+}
+
+body .benchmark-library__hero {
+	grid-template-columns: minmax(460px, 1fr) minmax(420px, 0.72fr);
+	gap: 72px;
+	min-height: 224px;
+	padding-bottom: 54px;
+}
+
+body .benchmark-library__hero h1 {
+	font-size: var(--lf-type-display);
+	font-weight: 560;
+	line-height: var(--lf-leading-display);
+}
+
+body .benchmark-library__hero p {
+	max-width: 48em;
+	margin-top: 24px;
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .benchmark-library__hero dt,
+body .benchmark-library__filters > span,
+body .benchmark-library__index > header {
+	font-size: var(--lf-type-meta);
+}
+
+body .benchmark-library__filters button {
+	min-height: 38px;
+	padding: 0 14px;
+	font-size: 13px;
+}
+
+body .benchmark-library__index > header {
+	min-height: 52px;
+}
+
+body .benchmark-library__index > article {
+	min-height: 88px;
+}
+
+body .benchmark-library__index > article > div strong {
+	font-size: 16px;
+}
+
+body .benchmark-library__index > article > span {
+	font-size: 14px;
+	line-height: 1.5;
+}
+
+body .benchmark-library__index > article > small,
+body .benchmark-library__index > article > div span {
+	font-size: 12px;
+}
+
+/* Single Benchmark research pages */
+body:has(.bench-page) .site-header .site-header__inner,
+body .bench-page__nav > div,
+body .bench-hero,
+body .bench-section {
+	width: var(--lf-page-width);
+}
+
+body .bench-page {
+	font-family: var(--lf-font-sans);
+}
+
+body .bench-page__nav {
+	top: 70px;
+}
+
+body .bench-page__nav > div,
+body .bench-page__nav a {
+	min-height: 54px;
+}
+
+body .bench-page__nav a {
+	font-size: 13px;
+}
+
+body .bench-page__nav .bench-page__identity {
+	font-size: 16px;
+}
+
+body .bench-hero {
+	grid-template-columns: minmax(480px, 1.08fr) minmax(460px, 0.92fr);
+	gap: 68px;
+	min-height: 290px;
+	padding: 54px 0 50px;
+}
+
+body .bench-hero h1 {
+	font-size: var(--lf-type-display);
+	line-height: var(--lf-leading-display);
+}
+
+body .bench-hero__copy > p {
+	font-size: 17px;
+	line-height: 1.68;
+}
+
+body .bench-hero dt,
+body .bench-data-card dt {
+	font-size: 11px;
+}
+
+body .bench-section {
+	padding: 76px 0;
+}
+
+body .bench-section__head {
+	grid-template-columns: minmax(420px, 0.58fr) minmax(420px, 0.42fr);
+	gap: 64px;
+	margin-bottom: 42px;
+}
+
+body .bench-section__head > div {
+	display: grid;
+	gap: 10px;
+}
+
+body .bench-section__head > div > span {
+	font-size: 11px;
+}
+
+body .bench-section__head h2 {
+	font-size: var(--lf-type-section);
+	font-weight: 680;
+	line-height: var(--lf-leading-title);
+}
+
+body .bench-section__head > p {
+	font-size: 15px;
+	line-height: 1.68;
+}
+
+body .bench-preview-note,
+body .bench-scoreboard__plot > footer,
+body .bench-scoreboard__table table,
+body .bench-model-list strong {
+	font-size: 13px;
+}
+
+body .bench-protocol li > span {
+	font-size: 11px;
+}
+
+/* Blog and topic indexes */
+body .lab-blog {
+	width: var(--lf-page-width);
+	padding: 72px 0 112px;
+	font-family: var(--lf-font-sans);
+}
+
+body .lab-blog__hero {
+	grid-template-columns: minmax(460px, 1fr) minmax(360px, 0.55fr);
+	gap: 72px;
+	min-height: 196px;
+	padding-bottom: 52px;
+}
+
+body .lab-blog__hero h1 {
+	font-size: var(--lf-type-display);
+	font-weight: 560;
+	line-height: var(--lf-leading-display);
+}
+
+body .lab-blog__hero p {
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .lab-blog__channels,
+body .lab-blog__latest,
+body .lab-blog__topics {
+	padding: 72px 0;
+}
+
+body .lab-blog__channels > h2,
+body .lab-blog__latest > h2,
+body .lab-blog__topics h2 {
+	margin-bottom: 42px;
+	font-size: var(--lf-type-section);
+	font-weight: 560;
+	line-height: var(--lf-leading-title);
+}
+
+body .lab-blog__channels a {
+	min-height: 108px;
+}
+
+body .lab-blog__channels a strong {
+	font-size: 18px;
+}
+
+body .lab-blog__channels a p,
+body .lab-blog__latest a p {
+	font-size: 15px;
+	line-height: 1.62;
+}
+
+body .lab-blog__channels a span,
+body .lab-blog__latest a span,
+body .lab-blog__latest time {
+	font-size: 12px;
+}
+
+body .lab-blog__latest a strong {
+	font-size: 23px;
+	line-height: 1.28;
+}
+
+/* Editorial pages */
+body .article {
+	width: min(var(--lf-article-shell), calc(100% - var(--lf-page-inset)));
+	padding: 68px 0 112px;
+	font-family: var(--lf-font-sans);
+}
+
+body .article-header {
+	max-width: var(--lf-article-head);
+}
+
+body .article h1,
+body .page-title h1 {
+	font-size: var(--lf-type-page);
+	font-weight: 650;
+	line-height: 1.1;
+}
+
+body .dek,
+body .page-title > p {
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .eyebrow,
+body .spec-table dt,
+body .article-views,
+body .tag-list a,
+body .article-actions a,
+body .entry-meta span {
+	font-size: var(--lf-type-meta);
+}
+
+body .spec-table dd,
+body .authors strong {
+	font-size: 14px;
+}
+
+body .article-body {
+	width: min(100%, var(--lf-reading-column));
+	font-family: var(--lf-font-sans);
+	font-size: 17px;
+	line-height: 1.9;
+}
+
+body .article-body h2 {
+	font-size: var(--lf-type-subsection);
+	line-height: 1.3;
+}
+
+body .article-body h3 {
+	font-size: 20px;
+}
+
+body .page-title,
+body .listing,
+body .tag-cloud {
+	width: min(var(--lf-reading-shell), calc(100% - var(--lf-page-inset)));
+	font-family: var(--lf-font-sans);
+}
+
+body .page-title {
+	padding: 68px 0 44px;
+}
+
+body .entry-row__rail,
+body .tag-cloud a {
+	font-size: 12px;
+}
+
+body .entry-title {
+	font-size: 24px;
+	line-height: 1.3;
+}
+
+body .entry-row__body > p {
+	font-size: 15px;
+	line-height: 1.68;
+}
+
+/* 404 */
+body .not-found {
+	display: grid;
+	width: min(var(--lf-reading-shell), calc(100% - var(--lf-page-inset)));
+	min-height: calc(100dvh - 70px);
+	grid-template-columns: minmax(180px, 0.34fr) minmax(0, 1fr);
+	align-items: center;
+	gap: 64px;
+	margin: 0 auto;
+	padding: 72px 0 88px;
+}
+
+body .not-found__code {
+	display: flex;
+	align-items: center;
+	color: #3b5f93;
+	font-family: var(--lf-font-mono);
+	font-size: clamp(56px, 8vw, 112px);
+	font-weight: 620;
+	line-height: 0.9;
+}
+
+body .not-found__code span:nth-child(2) {
+	color: #17201f;
+}
+
+body .not-found__body h1 {
+	max-width: 11em;
+	margin: 18px 0 22px;
+	font-size: var(--lf-type-page);
+	font-weight: 650;
+	line-height: var(--lf-leading-title);
+}
+
+body .not-found__body > p:not(.eyebrow) {
+	max-width: 38em;
+	margin: 0;
+	color: #596562;
+	font-size: var(--lf-type-body);
+	line-height: var(--lf-leading-body);
+}
+
+body .not-found__links {
+	display: flex;
+	flex-wrap: wrap;
+	margin-top: 38px;
+	border-top: 1px solid #bac4c0;
+	border-left: 1px solid #bac4c0;
+}
+
+body .not-found__links a {
+	display: flex;
+	min-width: 128px;
+	min-height: 46px;
+	align-items: center;
+	justify-content: center;
+	padding: 0 16px;
+	border-right: 1px solid #bac4c0;
+	border-bottom: 1px solid #bac4c0;
+	color: #17201f;
+	font-size: 13px;
+	font-weight: 650;
+	text-decoration: none;
+}
+
+body .not-found__links a:hover,
+body .not-found__links a:focus-visible {
+	background: #eef2fa;
+	color: #3b5f93;
+}
+
+/* Shared footer */
+body .site-footer.site-footer--horizon {
+	font-family: var(--lf-font-sans);
+}
+
+body .horizon-footer__main,
+body .horizon-footer__bottom {
+	width: var(--lf-page-width);
+}
+
+body .horizon-footer__identity strong {
+	font-size: 19px;
+}
+
+body .horizon-footer__identity span,
+body .horizon-footer__brand > p,
+body .horizon-footer__nav-group > span,
+body .horizon-footer__bottom {
+	font-size: 12px;
+}
+
+body .horizon-footer__brand > p {
+	line-height: 1.65;
+}
+
+body .horizon-footer__nav-group a {
+	font-size: 14px;
+}
+
+@media (max-width: 1180px) {
+	:root {
+		--lf-page-inset: 40px;
+	}
+
+	body .obs-intro,
+	body .benchmark-library__hero,
+	body .lab-blog__hero,
+	body .bench-hero,
+	body .bench-section__head {
+		grid-template-columns: 1fr;
+		gap: 36px;
+	}
+
+	body .obs-intro__statement {
+		padding: 28px 0 0;
+		border-top: 1px solid var(--obs-line-dark);
+		border-left: 0;
+	}
+
+	body .benchmark-library__hero,
+	body .lab-blog__hero,
+	body .bench-hero {
+		min-height: 0;
+	}
+}
+
+@media (min-width: 701px) and (max-width: 980px) {
+	body .site-header .nav {
+		display: flex;
+		gap: 20px;
+	}
+
+	body .site-header .nav a > span {
+		display: none;
+	}
+
+	body .site-header .header-actions {
+		gap: 18px;
+	}
+}
+
+@media (max-width: 900px) {
+	body .chart-lab__compact-head {
+		min-height: 0;
+		align-items: flex-start;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	body .chart-lab__compact-actions {
+		width: 100%;
+		height: 46px;
+	}
+
+	body .chart-lab__mode-switch {
+		flex: 1 1 320px;
+	}
+
+	body .chart-lab__compact-actions > button {
+		flex: 0 1 260px;
+		min-width: 220px;
+	}
+}
+
+@media (max-width: 820px) {
+	:root {
+		--lf-page-inset: 32px;
+		--lf-type-display: 42px;
+		--lf-type-page: 38px;
+		--lf-type-section: 32px;
+		--lf-type-subsection: 23px;
+	}
+
+	body .site-header .site-header__inner {
+		min-height: 60px;
+	}
+
+	body .site-header .brand-mark {
+		width: 32px;
+		height: 32px;
+	}
+
+	body .site-header .brand-wordmark strong {
+		font-size: 14px;
+	}
+
+	body .site-header .header-actions {
+		gap: 10px;
+	}
+
+	body .site-header .nav {
+		display: flex;
+	}
+
+	body .site-header .mobile-nav {
+		display: none;
+	}
+
+	body .obs-intro,
+	body .benchmark-library,
+	body .lab-blog,
+	body .article {
+		padding-top: 44px;
+	}
+
+	body .obs-intro {
+		gap: 28px;
+		padding-bottom: 34px;
+	}
+
+	body .obs-intro__title h1 {
+		margin-top: 16px;
+	}
+
+	body .obs-intro__statement > p,
+	body .obs-section-heading > p,
+	body .obs-method__statement > p,
+	body .obs-journal__head p {
+		font-size: 15px;
+	}
+
+	body .obs-section-heading {
+		grid-template-columns: 1fr;
+		gap: 20px;
+		padding-top: 54px;
+	}
+
+	body .chart-lab__compact-head {
+		padding: 18px 16px;
+	}
+
+	body .benchmark-library__hero,
+	body .lab-blog__hero {
+		gap: 28px;
+		padding-bottom: 42px;
+	}
+
+	body .benchmark-library__hero p {
+		margin-top: 18px;
+	}
+
+	body .benchmark-library__filters {
+		min-height: 64px;
+	}
+
+	body .benchmark-library__index > article > div strong {
+		font-size: 15px;
+	}
+
+	body .benchmark-library__index > article > span:first-of-type {
+		font-size: 12px;
+		line-height: 1.35;
+	}
+
+	body .lab-blog__channels,
+	body .lab-blog__latest,
+	body .lab-blog__topics {
+		padding: 58px 0;
+	}
+
+	body .lab-blog__channels > h2,
+	body .lab-blog__latest > h2,
+	body .lab-blog__topics h2 {
+		margin-bottom: 32px;
+	}
+
+	body .bench-page__nav {
+		top: 60px;
+	}
+
+	body .bench-page__nav > div {
+		box-sizing: border-box;
+		width: max-content;
+		min-width: 100%;
+		margin: 0;
+		padding-right: 16px;
+		padding-left: 16px;
+	}
+
+	body .bench-hero {
+		gap: 34px;
+		padding: 44px 0;
+	}
+
+	body .bench-section {
+		padding: 58px 0;
+	}
+
+	body .bench-section__head {
+		gap: 22px;
+		margin-bottom: 32px;
+	}
+
+	body .page-title {
+		padding-top: 48px;
+	}
+
+	body .not-found {
+		min-height: calc(100dvh - 60px);
+		grid-template-columns: 1fr;
+		align-content: center;
+		gap: 30px;
+		padding: 54px 0 68px;
+	}
+
+	body .not-found__code {
+		font-size: 64px;
+	}
+
+	body .article-body {
+		font-size: 16px;
+		line-height: 1.86;
+	}
+
+	body .horizon-footer__nav {
+		gap: 28px 24px;
+	}
+}
+
+@media (max-width: 700px) {
+	body .site-header .nav {
+		display: none !important;
+	}
+
+	body .site-header .mobile-nav {
+		display: block;
+	}
+}
+
+@media (max-width: 620px) {
+	body .bench-page__nav {
+		scroll-padding-inline: 16px;
+	}
+
+	body .bench-page__nav > div {
+		padding-right: 48px;
+	}
+
+	body .bench-page__nav .bench-page__identity {
+		display: none;
+	}
+
+	body .chart-lab__compact-actions {
+		height: auto;
+		flex-wrap: wrap;
+	}
+
+	body .chart-lab__mode-switch {
+		width: 100%;
+		height: 44px;
+		flex: 1 1 100%;
+	}
+
+	body .chart-lab__compact-actions > button {
+		width: 100%;
+		height: 44px;
+		flex: 1 1 100%;
+		min-width: 0;
+		margin-left: 0;
+	}
+
+	body .benchmark-library__hero dl {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	body .benchmark-library__hero dl > div {
+		min-height: 88px;
+		padding-left: 10px;
+	}
+
+	body .benchmark-library__hero dd {
+		font-size: 24px;
+	}
+
+	body .benchmark-library__index > article {
+		min-height: 88px;
+	}
+
+	body .lab-blog__latest a {
+		min-height: 238px;
+	}
+
+	body .article h1,
+	body .page-title h1 {
+		font-size: 36px;
+	}
+
+	body .not-found__body h1 {
+		font-size: 36px;
+	}
+
+	body .not-found__links {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	body .not-found__links a {
+		min-width: 0;
+	}
+
+	body .article-header {
+		padding-bottom: 34px;
+	}
+
+	body .entry-title {
+		font-size: 21px;
+	}
+
+	body .horizon-footer__main,
+	body .horizon-footer__bottom {
+		width: var(--lf-page-width);
+	}
+}
+
+@media (max-width: 360px) {
+	body .bench-hero {
+		width: calc(100% - 28px);
+		max-width: calc(100% - 28px);
+		min-width: 0;
+	}
+
+	body .bench-hero__copy,
+	body .bench-hero__facts {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	body .bench-hero h1 {
+		max-width: 100%;
+		font-size: 34px;
+		overflow-wrap: anywhere;
+		word-break: break-word;
+	}
+
+	body .site-header .site-header__inner {
+		gap: 8px;
+	}
+
+	body .site-header .brand {
+		gap: 8px;
+	}
+
+	body .site-header .brand-mark {
+		width: 30px;
+		height: 30px;
+	}
+
+	body .site-header .brand-wordmark strong {
+		font-size: 12px;
+		white-space: nowrap;
+	}
+
+	body .site-header .header-actions {
+		gap: 6px;
+	}
+
+	body .site-header .mobile-nav summary {
+		min-width: 44px;
+	}
+
+	body .site-header .lang-switch a {
+		min-width: 28px;
+		padding-right: 4px;
+		padding-left: 4px;
+	}
+
+	body .chart-lab__compact-actions > button {
+		height: auto;
+		min-height: 58px;
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
+
+	body .chart-lab__compact-actions > button small {
+		display: block;
+		white-space: nowrap;
+	}
+}

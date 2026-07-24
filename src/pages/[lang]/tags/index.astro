@@ -1,37 +1,17 @@
 ---
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { languages, languageFrom, tagPath, ui } from '../../../lib/site';
-import { tagsForLanguage } from '../../../lib/content';
+import RedirectLayout from '../../../layouts/RedirectLayout.astro';
+import { languages, languageFrom, localizedPath } from '../../../lib/site';
 
 export function getStaticPaths() {
 	return languages.map((lang) => ({ params: { lang }, props: { lang } }));
 }
 
 const lang = languageFrom(Astro.props.lang);
-const labels = ui[lang].pages.tags;
-const tags = await tagsForLanguage(lang);
 ---
 
-<BaseLayout lang={lang} title={labels.title} description={labels.description} alternatePath="/tags/">
-	<header class="page-title">
-		<div>
-			<p class="eyebrow">{labels.eyebrow}</p>
-			<h1>{labels.title}</h1>
-		</div>
-		<p>{labels.body}</p>
-	</header>
-	{tags.length ? (
-		<nav class="tag-cloud" aria-label="All tags">
-			{tags.map((tag) => <a href={tagPath(tag, lang)}>{tag}</a>)}
-		</nav>
-	) : (
-		<section class="listing">
-			<div class="entry-list">
-				<div class="empty-state">
-					<p>{labels.emptyTitle}</p>
-					<span>{labels.emptyBody}</span>
-				</div>
-			</div>
-		</section>
-	)}
-</BaseLayout>
+<RedirectLayout
+	to={localizedPath(lang, '/blog/tags/')}
+	title={lang === 'zh' ? '研究主题' : 'Research topics'}
+	{lang}
+	alternatePath="/tags/"
+/>

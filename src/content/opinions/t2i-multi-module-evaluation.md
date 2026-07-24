@@ -7,6 +7,7 @@ summary: "以 LLM-as-a-Judge 为核心，通过 OCR/VQA/CLIP/IQA/HP 五模块协
 authors:
   - name: "杨晓文"
     github: "ShawnJoeng"
+    avatar: "/assets/authors/shawnjoeng.png"
 stance: "现有 T2I benchmark 无法覆盖文本渲染、世界知识、多视图等现代能力，需要多模块协同的自动化评估框架"
 tags: ["evaluation", "text-to-image", "llm-as-a-judge", "benchmark"]
 ---
@@ -213,8 +214,6 @@ T2I模型已经从“能不能画只猫”进化到了“能不能画一张准�
 
 ---
 
-杨晓文，
+杨晓文
 
-ERNIE-Image模型策略产品经理，评测与数据组，百度。
-
-写于2026.5.21，北京。
+写于 2026.5.21。

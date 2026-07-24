@@ -7,6 +7,7 @@ summary: "梳理 coding agent harness 的代码库检索路线：grep、语义�
 authors:
   - name: "孙钟恺"
     github: "sunzhongkai588"
+    avatar: "/assets/authors/sunzhongkai588.jpg"
 
 stance: "2026 年的 coding agent 检索不会是 grep 或向量索引二选一，而会走向可验证、低噪声的混合检索。"
 tags: ["agent", "code-search", "coding-agent", "retrieval"]

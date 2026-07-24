@@ -8,8 +8,8 @@ const smokeSlug = 'analytics-smoke';
 const smokeTranslationSlug = 'analytics-smoke-en';
 const smokeFile = join(root, 'src', 'content', 'opinions', `${smokeSlug}.md`);
 const smokeTranslationFile = join(root, 'src', 'content', 'opinions', `${smokeTranslationSlug}.md`);
-const smokeOutput = join(root, 'dist', 'zh', 'opinions', smokeSlug, 'index.html');
-const smokeTranslationOutput = join(root, 'dist', 'en', 'opinions', smokeTranslationSlug, 'index.html');
+const smokeOutput = join(root, 'dist', 'zh', 'blog', smokeSlug, 'index.html');
+const smokeTranslationOutput = join(root, 'dist', 'en', 'blog', smokeTranslationSlug, 'index.html');
 const analyticsEnv = {
 	PUBLIC_GA_MEASUREMENT_ID: 'G-ZK42116ZXB',
 	PUBLIC_PAGEVIEW_ENDPOINT: 'https://example.test/pageview',
@@ -141,8 +141,8 @@ try {
 	assertIncludes(html, '<blockquote>', 'Markdown blockquote rendering');
 	assertIncludes(html, '<pre', 'Markdown fenced code rendering');
 	assertIncludes(html, '<hr', 'Markdown thematic break rendering');
-	assertIncludes(html, '/en/opinions/analytics-smoke-en/', 'translated English language switch path');
-	assertIncludes(translationHtml, '/zh/opinions/analytics-smoke/', 'translated Chinese language switch path');
+	assertIncludes(html, '/en/blog/analytics-smoke-en/', 'translated English language switch path');
+	assertIncludes(translationHtml, '/zh/blog/analytics-smoke/', 'translated Chinese language switch path');
 	assertIncludes(html, 'data-image-lightbox', 'article image lightbox markup');
 	assertIncludes(html, 'lightboxTrigger', 'article image lightbox script');
 

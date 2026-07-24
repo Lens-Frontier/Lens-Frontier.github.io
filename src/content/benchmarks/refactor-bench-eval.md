@@ -4,8 +4,9 @@ lang: "zh"
 date: 2026-06-16
 summary: "以行为保持和结构静态检查为核心，用真实开源代码提交做数据、隔离环境测试、用 tree-sitter 做语法树匹配，避开大模型当裁判带来的主观漂移，精准测量大模型的代码重构能力边界。"
 authors:
-  - name: "韩曙斌｜百度评测与数据组"
+  - name: "韩曙斌"
     github: "ShubinHan123"
+    avatar: "/assets/authors/shubinhan123.png"
 area: "code refactoring"
 metric: "Pass@1 = 单测 ∧ Checklist"
 version: "v1 (80 records)"
@@ -183,6 +184,6 @@ def check_caller_grew(ctx):
 
 ---
 
-韩曙斌｜百度评测与数据组
+韩曙斌
 
 写于 2026.6.16

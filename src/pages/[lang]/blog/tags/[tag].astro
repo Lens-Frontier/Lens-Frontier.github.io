@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import '../../../../styles/blog-lab.css';
+import { entryPath, languages, languageFrom, localizedPath, ui } from '../../../../lib/site';
+import { publishedEntries, tagsForLanguage } from '../../../../lib/content';
+
+export async function getStaticPaths() {
+	const paths = [];
+	for (const lang of languages) {
+		const tags = await tagsForLanguage(lang);
+		paths.push(...tags.map((tag) => ({ params: { lang, tag }, props: { lang, tag } })));
+	}
+	return paths;
+}
+
+const lang = languageFrom(Astro.props.lang);
+const collectionLabels = ui[lang].collectionLabels;
+const { tag } = Astro.props;
+const entries = (await publishedEntries(lang)).filter(({ entry }) => entry.data.tags?.includes(tag));
+const blogPath = localizedPath(lang, '/blog/');
+const copy = lang === 'zh'
+	? {
+			kicker: 'BLOG / TOPIC',
+			count: `${entries.length} 项研究发布`,
+			related: '相关发布',
+			back: '返回全部 Blog',
+			empty: '这个主题下暂时没有公开记录。',
+		}
+	: {
+			kicker: 'BLOG / TOPIC',
+			count: `${entries.length} research outputs`,
+			related: 'Related publications',
+			back: 'Back to Blog',
+			empty: 'There are no public research outputs under this topic yet.',
+		};
+---
+
+<BaseLayout
+	lang={lang}
+	title={lang === 'zh' ? `研究主题：${tag}` : `Research topic: ${tag}`}
+	description={copy.count}
+	alternatePath="/blog/tags/"
+>
+	<div class="lab-blog lab-blog--topic-detail">
+		<header class="lab-blog__hero lab-blog__hero--topics">
+			<div>
+				<a class="lab-blog__back" href={blogPath}>← {copy.back}</a>
+				<span class="lab-blog__kicker">{copy.kicker}</span>
+				<h1>#{tag}</h1>
+			</div>
+			<p>{copy.count}</p>
+		</header>
+
+		<section class="lab-blog__latest" aria-labelledby="lab-blog-related">
+			<h2 id="lab-blog-related">{copy.related}</h2>
+			{entries.length ? (
+				<div>
+					{entries.map(({ entry, collection }) => (
+						<a href={entryPath(collection, entry.id, lang)}>
+							<span>{collectionLabels[collection]}</span>
+							<time datetime={entry.data.date.toISOString()}>{entry.data.date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US')}</time>
+							<strong>{entry.data.title}</strong>
+							<p>{entry.data.summary}</p>
+						</a>
+					))}
+				</div>
+			) : <p class="lab-blog__empty">{copy.empty}</p>}
+		</section>
+	</div>
+</BaseLayout>
