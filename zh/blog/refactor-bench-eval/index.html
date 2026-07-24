@@ -1,0 +1,762 @@
+<!DOCTYPE html><html lang="zh-CN"> <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="generator" content="Astro v6.3.3"><script>(function(){const measurementId = "G-ZK42116ZXB";
+
+			(() => {
+				const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+				window.dataLayer = window.dataLayer || [];
+				window.gtag =
+					window.gtag ||
+					function gtag() {
+						window.dataLayer.push(arguments);
+					};
+				if (doNotTrack) return;
+				window.gtag('js', new Date());
+				window.gtag('config', measurementId);
+
+				const loadAnalytics = () => {
+					if (document.querySelector('script[data-lens-frontier-ga]')) return;
+					const script = document.createElement('script');
+					script.async = true;
+					script.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(measurementId);
+					script.dataset.lensFrontierGa = 'true';
+					document.head.append(script);
+				};
+
+				const scheduleAnalytics = () => {
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(loadAnalytics, { timeout: 2500 });
+						return;
+					}
+					window.setTimeout(loadAnalytics, 1200);
+				};
+
+				if (document.readyState === 'complete') scheduleAnalytics();
+				else window.addEventListener('load', scheduleAnalytics, { once: true });
+			})();
+		})();</script><title>一个客观的代码重构评估体系是如何构成的 - Lens Frontier</title><meta name="description" content="以行为保持和结构静态检查为核心，用真实开源代码提交做数据、隔离环境测试、用 tree-sitter 做语法树匹配，避开大模型当裁判带来的主观漂移，精准测量大模型的代码重构能力边界。"><meta name="theme-color" content="#f4f6f5" data-theme-color><script>
+			(() => {
+				const stored = localStorage.getItem('lens-frontier-theme');
+				const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const theme = stored === 'light' || stored === 'dark' ? stored : systemDark ? 'dark' : 'light';
+				document.documentElement.dataset.theme = theme;
+				document.documentElement.style.colorScheme = theme;
+			})();
+		</script><link rel="canonical" href="https://lens-frontier.github.io/zh/blog/refactor-bench-eval/"><link rel="alternate" hreflang="zh-CN" href="/zh/blog/refactor-bench-eval/"><link rel="alternate" hreflang="en" href="/en/blog/"><link rel="icon" type="image/svg+xml" href="/favicon.svg"><link rel="stylesheet" href="/_astro/BaseLayout.BG1T4O_I.css"></head> <body id="top"> <div class="shell"> <header class="site-header"> <div class="site-header__inner"> <a class="brand" href="/zh/"> <span class="brand-mark" aria-hidden="true">LF</span> <span class="brand-wordmark"> <strong>Lens Frontier</strong> <small>评测数据平台</small> </span> </a> <div class="header-actions"> <nav class="nav" aria-label="Primary navigation"> <a href="/zh/#leaderboard"> <span aria-hidden="true">01</span> 榜单 </a><a href="/zh/benchmarks/"> <span aria-hidden="true">02</span> Benchmarks </a><a href="/zh/blog/" aria-current="page"> <span aria-hidden="true">03</span> 博客 </a> </nav> <details class="mobile-nav"> <summary>菜单</summary> <nav aria-label="Mobile navigation"> <a href="/zh/#leaderboard"> <span aria-hidden="true">01</span> <strong>榜单</strong> </a><a href="/zh/benchmarks/"> <span aria-hidden="true">02</span> <strong>Benchmarks</strong> </a><a href="/zh/blog/" aria-current="page"> <span aria-hidden="true">03</span> <strong>博客</strong> </a> </nav> </details> <nav class="lang-switch" aria-label="Language switcher"> <a href="/zh/blog/refactor-bench-eval/" aria-current="true"> 中文 </a><a href="/en/blog/"> EN </a> </nav> <button type="button" class="theme-toggle" data-theme-toggle data-light-label="切换到浅色模式" data-dark-label="切换到暗色模式" aria-label="切换到暗色模式" title="切换到暗色模式"> <span class="theme-toggle__icon" aria-hidden="true"></span> </button> </div> </div> </header> <main>  <article class="article article--benchmark" data-article-layout data-analytics-page="article" data-analytics-article-id="benchmarks/refactor-bench-eval" data-analytics-collection="benchmarks" data-analytics-lang="zh"> <header class="article-header"> <p class="eyebrow">评测方法</p> <h1>一个客观的代码重构评估体系是如何构成的</h1> <p class="dek">以行为保持和结构静态检查为核心，用真实开源代码提交做数据、隔离环境测试、用 tree-sitter 做语法树匹配，避开大模型当裁判带来的主观漂移，精准测量大模型的代码重构能力边界。</p> <div class="article-byline"> <ul class="authors" aria-label="Authors"><li><img src="/assets/authors/shubinhan123.png" alt="韩曙斌 avatar" loading="lazy"><span><a class="author-name" href="https://github.com/ShubinHan123" target="_blank" rel="noreferrer"><strong>韩曙斌</strong></a><a href="https://github.com/ShubinHan123" target="_blank" rel="noreferrer">@ShubinHan123</a></span></li></ul> <span class="article-views" data-article-views data-loading-label="读取中" aria-label="阅读: 读取中" hidden><span>阅读</span><strong data-view-count>--</strong></span>
+		<script>(function(){const articleId = "benchmarks/refactor-bench-eval";
+const countEndpoint = "https://lens-frontier-pageviews.pages.dev/views";
+const lang = "zh";
+const siteId = "lens-frontier";
+
+			(() => {
+				const target = document.querySelector('[data-article-views]');
+				const value = target?.querySelector('[data-view-count]');
+				if (!target || !value) return;
+
+				const formatter = new Intl.NumberFormat(lang === 'zh' ? 'zh-CN' : 'en-US');
+				const url = new URL(countEndpoint, window.location.origin);
+				url.searchParams.set('siteId', siteId);
+				url.searchParams.set('articleId', articleId);
+				let refreshRequestId = 0;
+				let latestCount = null;
+				let fallbackScheduled = false;
+
+				const renderViewCount = (rawCount) => {
+					const count = Number(rawCount || 0);
+					if (latestCount !== null && count < latestCount) return;
+					latestCount = count;
+					value.textContent = formatter.format(count);
+					target.hidden = false;
+					target.setAttribute('aria-label', `${target.firstElementChild?.textContent || 'Views'}: ${count}`);
+				};
+
+				const refreshViewCount = () => {
+					const requestId = ++refreshRequestId;
+					const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+					const timeout = controller ? window.setTimeout(() => controller.abort(), 2500) : null;
+
+					fetch(url.toString(), { credentials: 'omit', cache: 'no-store', signal: controller?.signal })
+						.then((response) => (response.ok ? response.json() : Promise.reject()))
+						.then((data) => {
+							if (requestId !== refreshRequestId) return;
+							renderViewCount(data.viewCount);
+						})
+						.catch(() => {
+							if (requestId === refreshRequestId && latestCount === null) target.hidden = true;
+						})
+						.finally(() => {
+							if (timeout) window.clearTimeout(timeout);
+						});
+				};
+
+				const scheduleFallbackRead = () => {
+					if (fallbackScheduled || latestCount !== null) return;
+					fallbackScheduled = true;
+					const read = () => {
+						if (latestCount === null) refreshViewCount();
+					};
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(read, { timeout: 3000 });
+						return;
+					}
+					window.setTimeout(read, 1600);
+				};
+
+				window.addEventListener('lens-frontier:pageview-recorded', (event) => {
+					if (event.detail?.articleId !== articleId) return;
+					if (Number.isFinite(Number(event.detail.viewCount))) renderViewCount(event.detail.viewCount);
+					else refreshViewCount();
+				});
+				if (window.__lensFrontierRecordedPageviews?.has(articleId)) {
+					renderViewCount(window.__lensFrontierRecordedPageviews.get(articleId));
+				} else if (document.readyState === 'complete') {
+					scheduleFallbackRead();
+				} else {
+					window.addEventListener('load', scheduleFallbackRead, { once: true });
+				}
+			})();
+		})();</script> </div> <dl class="spec-table"><div><dt>日期</dt><dd>2026/06/16</dd></div><div><dt>领域</dt><dd>code refactoring</dd></div><div><dt>指标</dt><dd>Pass@1 = 单测 ∧ Checklist</dd></div><div><dt>版本</dt><dd>v1 (80 records)</dd></div><div><dt>风险</dt><dd>medium</dd></div><div><dt>状态</dt><dd>active</dd></div></dl> <div class="article-actions">   </div> <div class="tag-list"> <a href="/zh/blog/tags/evaluation/">evaluation</a><a href="/zh/blog/tags/code-refactoring/">code-refactoring</a><a href="/zh/blog/tags/benchmark/">benchmark</a><a href="/zh/blog/tags/coding-agent/">coding-agent</a> </div> </header> <div class="article-body">  <p>今天想讲讲我是如何设计这套评测系统的——<strong>用行为保持和结构静态检查，把”重构做没做对”变成一个确定性的 0/1 判定，以及在这个过程中踩了哪些坑、做了哪些关键的技术取舍</strong>。</p>
+<h2 id="1-什么是代码重构">1. 什么是代码重构</h2>
+<p>代码重构，指的是不改变程序行为、只改善代码结构。它是软件工程中最日常的操作之一——提取函数、内联变量、简化条件、移动类型、合并重复逻辑。自从 Coding Agent 兴起以来，重构的需求也越来越多，模型能不能把重构做对，已经不是学术问题而是生产力问题。</p>
+<p>我对现有的代码重构评测集做了系统梳理，发现它们各有侧重但均存在显著盲区：</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th><strong>评测维度</strong></th><th><strong>SWE-Refactor</strong></th><th><strong>RefactorBench</strong></th><th><strong>SWE-Compass</strong></th><th><strong>本工作</strong></th></tr></thead><tbody><tr><td>多语言覆盖</td><td>✗（仅 Java）</td><td>✗（仅 Python）</td><td>✓（10 种）</td><td>✓（9 种）</td></tr><tr><td>重构类型细分</td><td>✓（6 种，原子+复合）</td><td>✗（无显式分类）</td><td>✗（粗粒度单类别）</td><td>✓（10 种分类）</td></tr><tr><td>数据来自真实提交</td><td>✓</td><td>✗（人工+大模型构建）</td><td>✓（真实 PR）</td><td>✓</td></tr><tr><td>跨文件重构</td><td>部分</td><td>✓（强制，平均 4.3 文件）</td><td>✓</td><td>✓（40%）</td></tr><tr><td>功能测试</td><td>✓（完整测试套件）</td><td>✗（仅 AST 结构测试）</td><td>✓（可执行测试）</td><td>✓（Docker 内完整单测）</td></tr><tr><td>结构正确性验证</td><td>✓</td><td>✓（Python ast）</td><td>✗</td><td>✓（tree-sitter）</td></tr><tr><td>不依赖大模型判分</td><td>✓</td><td>✓</td><td>✗</td><td>✓</td></tr><tr><td>评测 agent 工作流</td><td>✗（模型直接生成）</td><td>✓</td><td>✓</td><td>✓（Claude Code 脚手架）</td></tr></tbody></table>
+<p>SWE-Refactor 在”严格验证”上做得最扎实（同时跑测试套件和 RefactoringMiner 做结构验证），但只有 Java；RefactorBench 最贴近真实 agent 场景（强制多文件、三级指令详细度），但本质上没有行为等价性验证——只看 AST 结构不跑测试，一个通过结构检查的改动仍可能已经改变了程序行为；SWE-Compass 语言覆盖最广，但重构只是八类任务之一，没有细粒度的重构类型分析。</p>
+<p>核心观察：<strong>重构的定义是”改变结构但不改变行为”——这两件事缺一不可。</strong> 我们的核心设计就是同时验证这两面：用 Docker 跑原项目单测确保行为不变，每个任务用 Opus4.6 生成 Checklist 做静态结构匹配确保结构改对了,并且人工逐一复查 Checklist 的合理性。</p>
+<h2 id="2-数据集怎么建的">2. 数据集怎么建的</h2>
+<p>数据集是整套系统的地基。我选择从真实开源项目的提交历史里挖重构案例，而不是人工构造题目。这样最能体现模型在真实任务中重构任务能力的体现，而且人工构造的重构场景永远比不上真实项目的复杂度和多样性。</p>
+<h3 id="从真实提交里抽取">从真实提交里抽取</h3>
+<p>每条记录对应一段历史上真发生的重构提交。我抽出该提交的<strong>父提交</strong>作为基线（模型看到的”改前”版本），提交本身作为 Ground Truth（“改后”版本），并保留原项目当时的单测套件。模型完全看不到”改后”版本——它只能根据”改前”代码加一段重构描述去改。</p>
+<p>最终的数据集覆盖：</p>
+<ul>
+<li><strong>11 个项目</strong>：django、pytest、sqlalchemy、commons-lang、curl、fiber、fmt、jellyfin、laravel-framework、nest、fastify</li>
+<li><strong>9 种语言</strong>：Python、Java、Go、TypeScript、JavaScript、C、C++、C#、PHP</li>
+<li><strong>80 条记录</strong>：筛选出有模型区分度、且较难的任务</li>
+<li><strong>10 种重构类型</strong>：提取函数（Extract Function/Method）、删除死代码（Remove Dead Code）、重命名（Rename）、简化条件（Simplify Conditional）、合并重复（Consolidate）、复合重构（Composite Refactoring）、提取类型（Extract Type）、移动（Move）、内联（Inline）等</li>
+</ul>
+<h3 id="几个数据集设计上的关键决策">几个数据集设计上的关键决策</h3>
+<h4 id="a跨文件比例刻意拉高">（a）跨文件比例刻意拉高</h4>
+<p>单文件重构对强模型基本没有区分度。经实验过程中发现：随着模型能力逐步提升，Opus4.6 和 Sonnet4.6 在单文件上 Pass@1 分别 77.5% / 75.0%，差距微乎其微；但在跨文件记录上分别 65.9% / 59.1%——<strong>跨文件才能真正拉开差距</strong>。所以最终数据集里 32 条是跨文件（40%），提高跨文件任务的比例。</p>
+<h4 id="b重构类型配比要看区分度不是均匀分布">（b）重构类型配比要看区分度，不是均匀分布</h4>
+<p>早期版本有个严重问题：提取函数（22 条）+ 删除死代码（17 条）+ 重命名（16 条）占了 65%，但这些对头部模型几乎全过——53.6% 的记录是所有模型都能过，16.7% 是都挂了，真正能区分模型的只有 29.8%。复盘后发现，复合重构和合并重复这种需要”全局视野”的类型区分度最高。</p>
+<h2 id="3-评测方法行为保持和结构静态检查">3. 评测方法：行为保持和结构静态检查</h2>
+<p>这是整套系统最核心的设计。我把”重构是否完成”拆成两个独立的检查：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>Pass@1 = BP（行为不变）∧ Checklist（结构改对）</span></span></code></pre>
+<p>两个检查都过才算 1，否则算 0。80 条记录求平均，得到模型的 Pass@1。</p>
+<h3 id="行为保持bpbehavior-preservation行为保持">行为保持：BP（Behavior Preservation，行为保持）</h3>
+<p>模型改完后，在原项目的 Docker 环境里跑两遍单测：重构前一遍、模型完成重构任务后一遍，然后逐项对比。</p>
+<p>判分条件（全部满足才算行为保持过关）：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="text"><code><span class="line"><span>compile_passed == 1          # 编译/导入没坏</span></span>
+<span class="line"><span>post_passed   >= pre_passed  # 没让原本过的测试变挂</span></span>
+<span class="line"><span>tests_passed  == 1           # 综合判断行为未变</span></span></code></pre>
+<h3 id="结构静态检查checklist结构检查清单结构改对了吗">结构静态检查：Checklist（结构检查清单，结构改对了吗？）</h3>
+<p>BP 只能告诉你”行为没变”，但模型完全可以<strong>一行不改</strong>照样过这一关。Checklist 用 Tree-sitter 做静态结构匹配：每条记录都有 3 到 6 个检查函数，遍历重构后的语法树，验证”该删的删了、该提取的提取了”，同时防止了模型什么都不改也能通过最终的检查。</p>
+<p>每个Checklist生成时接收一个上下文对象，里面有改前的全部实体（函数/类/方法）、改后的全部实体，以及一系列基于 Tree-sitter 的高层查询方法（统计某个函数被调用几次、某个实体的语法树规模、某段代码里的条件分支数等）。</p>
+<h2 id="4-几个关键的技术设计决策">4. 几个关键的技术设计决策</h2>
+<p>做这套系统的过程中踩了不少坑，也沉淀了一些我觉得比较有价值的设计。</p>
+<h3 id="1checklist-的五步生产流水线">（1）Checklist 的五步生产流水线</h3>
+<p>写出”对所有合法实现都公平”的 Checklist 远比想象中难。我设计了一条闭环迭代的流水线：</p>
+<ol>
+<li><strong>规则生成初版</strong>：Opus4.6 结合按重构类型和提交的审计信息（where / what / why）和前后代码差异，产出第一版检Checklist</li>
+<li><strong>Ground Truth 自检过滤</strong>：拿 Ground Truth跑一遍 Checklist，连ground truth都过不了的检查项直接淘汰</li>
+<li><strong>跑一轮模型</strong>：用多个模型各跑一次，形成一张”模型 × 检查项”的通过/失败矩阵</li>
+<li><strong>模型复审</strong>：人工结合 Opus4.6 当分析员，区分”模型确实没做到”和”检查项写得苛刻”</li>
+<li><strong>产出终版</strong>：应用上一步的修改，再过一遍 Ground Truth 自检兜底，最后实现最终版本的Checklist</li>
+</ol>
+<h3 id="2shape-over-names">（2）Shape over Names</h3>
+<p>Ground truth 只是某个工程师写出来的”一种”正确实现。换另一个工程师做同样的重构，可能会给新提取的函数取一个不同但同样合理的名字、用不同的中间表示、把新符号放在稍微不同的位置。</p>
+<p>所以 Checklist <strong>必须基于结构形状（shape），不能写死名字（names）</strong>。具体做法是用集合差来检测”出现了一个新东西”：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#6A737D"># 反例：写死了新函数名</span></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> check_helper_exists</span><span style="color:#24292E">(ctx):</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#24292E"> ctx.helpers.entity_exists(</span><span style="color:#032F62">'getPrimitiveClass'</span><span style="color:#24292E">, </span><span style="color:#E36209">where</span><span style="color:#D73A49">=</span><span style="color:#032F62">'after'</span><span style="color:#24292E">), </span><span style="color:#032F62">''</span></span>
+<span class="line"></span>
+<span class="line"><span style="color:#6A737D"># 正例：检测"新出现的函数中有至少一个被调用了"</span></span>
+<span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> check_new_helper_invoked</span><span style="color:#24292E">(ctx):</span></span>
+<span class="line"><span style="color:#24292E">    new_fns </span><span style="color:#D73A49">=</span><span style="color:#24292E"> ({e.name </span><span style="color:#D73A49">for</span><span style="color:#24292E"> e </span><span style="color:#D73A49">in</span><span style="color:#24292E"> ctx.after_entities.values() </span><span style="color:#D73A49">if</span><span style="color:#24292E"> e.kind </span><span style="color:#D73A49">==</span><span style="color:#032F62"> 'function'</span><span style="color:#24292E">}</span></span>
+<span class="line"><span style="color:#D73A49">             -</span><span style="color:#24292E"> {e.name </span><span style="color:#D73A49">for</span><span style="color:#24292E"> e </span><span style="color:#D73A49">in</span><span style="color:#24292E"> ctx.before_entities.values() </span><span style="color:#D73A49">if</span><span style="color:#24292E"> e.kind </span><span style="color:#D73A49">==</span><span style="color:#032F62"> 'function'</span><span style="color:#24292E">})</span></span>
+<span class="line"><span style="color:#D73A49">    for</span><span style="color:#24292E"> nm </span><span style="color:#D73A49">in</span><span style="color:#24292E"> new_fns:</span></span>
+<span class="line"><span style="color:#D73A49">        if</span><span style="color:#24292E"> ctx.helpers.count_calls(nm, </span><span style="color:#E36209">where</span><span style="color:#D73A49">=</span><span style="color:#032F62">'after'</span><span style="color:#24292E">) </span><span style="color:#D73A49">>=</span><span style="color:#005CC5"> 1</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#D73A49">            return</span><span style="color:#005CC5"> True</span><span style="color:#24292E">, </span><span style="color:#D73A49">f</span><span style="color:#032F62">'new helper </span><span style="color:#005CC5">{</span><span style="color:#24292E">nm</span><span style="color:#005CC5">}</span><span style="color:#032F62"> invoked'</span></span>
+<span class="line"><span style="color:#D73A49">    return</span><span style="color:#005CC5"> False</span><span style="color:#24292E">, </span><span style="color:#032F62">'no new function is called'</span></span></code></pre>
+<p>这样不管模型取什么名字，只要结构上”确实多了一个函数并被调用了”，就算通过。</p>
+<h3 id="3自动跳过锚点找不到时宁可跳过也不误判">（3）自动跳过：锚点找不到时，宁可跳过也不误判</h3>
+<p>很多检查项在写的时候需要一个”锚点”——先按名字定位到某个实体，再验证它的变化。比如一条提取重构的检查可能这么写：</p>
+<pre class="astro-code github-light" style="background-color:#fff;color:#24292e; overflow-x: auto;" tabindex="0" data-language="python"><code><span class="line"><span style="color:#D73A49">def</span><span style="color:#6F42C1"> check_caller_grew</span><span style="color:#24292E">(ctx):</span></span>
+<span class="line"><span style="color:#6A737D">    # 先按名字定位调用方，再看它的体积有没有变大</span></span>
+<span class="line"><span style="color:#24292E">    caller </span><span style="color:#D73A49">=</span><span style="color:#24292E"> _find_by_name(ctx.after_entities, </span><span style="color:#032F62">'create_contenttypes'</span><span style="color:#24292E">)</span></span>
+<span class="line"><span style="color:#D73A49">    if</span><span style="color:#24292E"> caller </span><span style="color:#D73A49">is</span><span style="color:#005CC5"> None</span><span style="color:#24292E">:</span></span>
+<span class="line"><span style="color:#D73A49">        return</span><span style="color:#005CC5"> False</span><span style="color:#24292E">, </span><span style="color:#032F62">'caller not found'</span></span>
+<span class="line"><span style="color:#005CC5">    ...</span></span></code></pre>
+<p>问题在于：如果模型在重构的同时合法地把 <code>create_contenttypes</code> 改了名或挪了位置，这个锚点在改后版本里就找不到了，检查会直接判不通过。但这并不是模型重构做错了，而是 Checklist 写死的名字跟不上模型的合法改动——属于<strong>误伤</strong>。</p>
+<p>自动跳过机制就是为这种情况兜底：当一个检查项失败的原因是”它依赖的锚点在改后版本里根本不存在”时，判分器不把它算作失败，而是降级为<strong>跳过</strong>。说明模型合法地重命名或移动了它——判分器会把这条检查跳过而不是判失败，避免误伤。其余检查项从其他角度兜底验证。</p>
+<h3 id="4该给模型什么样的指令才合理">（4）该给模型什么样的指令才合理</h3>
+<p>给模型的重构指令怎么写，直接决定了你到底在测什么能力。这里有一个微妙的平衡：</p>
+<ul>
+<li><strong>太具体</strong>——比如”把 foo 函数里的重复逻辑提取为 <code>getPrimitiveClass(className)</code> 这个包级私有方法”——就等于把 Ground Truth 的函数名和签名直接喂给了模型。它根本不需要理解代码在做什么，照抄就能过。这时候测的不是重构能力，是抄写能力。</li>
+<li><strong>太模糊</strong>——比如”优化一下这个文件”——则任务无法判定，模型往哪个方向改都说得通，Checklist 也没法对齐一个明确的目标。</li>
+</ul>
+<p>合理的做法是<strong>只交代重构的目标、范围和动机，把”具体怎么实现”留给模型</strong>。比如：“某个（多个）代码文件里有一段复合的元组解包条件可以拆分简化，请在保持行为不变的前提下重构它”——它点明了改哪里、改什么类型、为什么改，但不泄漏新名字、新中间变量、具体写法。</p>
+<p>在我们的评测集里，我们为每条记录都校准了这个颗粒度：把”改哪里、改什么、为什么改”说清楚，但刻意不出现 Ground Truth 里的新符号名和字面量。这样模型必须真正读懂改前的代码、自己决定实现路径，测出来的才是它对重构语义的理解，而不是对答案的复述。</p>
+<h3 id="5退役的-gate-们不是不好用是被更优的方案替代了">（5）退役的 Gate 们：不是不好用，是被更优的方案替代了</h3>
+<p>早期版本跑过很多额外的检测：AST 修改检测、复杂度不退化检测（LLM Judge）、类型检查，以及多维度大模型质量打分。最终全部撤掉。但撤掉的原因各不相同，值得分开说：</p>
+<ul>
+<li><strong>AST 修改检测 / 复杂度不退化检测 —— 被 Checklist 替代。</strong> 它们本质上都在判断”结构有没有按预期变化”，但用的是粗粒度的全局信号（比如整体语法树节点数有没有变）。Checklist 出现后，用逐条手写的精确检查替代了这些笼统判断——信息量更大、误判更少。它们不是不好用，而是<strong>有了更精确的替代品</strong>，留着只是冗余。</li>
+<li><strong>类型检查 —— 被 BP 覆盖。</strong> 类型检查是指单独跑一遍静态类型分析（如 Java 的编译器类型系统、TypeScript 的 <code>tsc</code>），验证模型有没有引入参数类型不匹配、调用不存在的方法等错误。但对静态类型语言来说，BP 阶段的编译 + 单测本来就会暴露类型错误——编译不过即类型有错。单独再跑一遍既慢又重复。</li>
+<li><strong>五维大模型质量打分 —— 主动放弃。</strong> 它依赖大模型来判定任务完成度、打质量分，恰恰是我们最想避开的：分数膨胀、跨次运行结果漂移，而且每条记录都要额外调用一次大模型，慢且不可复现。</li>
+</ul>
+<p>砍掉这些之后还有一个直接收益：<strong>判分变快并且更准确而且可复现。</strong> 判分链路只剩 BP（容器内跑测试）和 Checklist（纯 Tree-sitter，不调大模型），单条记录的验证从”跑多个检查加多次大模型调用”压缩成两步确定性检查。</p>
+<h2 id="5-踩坑与心得">5. 踩坑与心得</h2>
+<p>做了几轮迭代之后，总结几条比较深刻的：</p>
+<ol>
+<li><strong>项目自带的单测和编译，是最硬的评判标准。</strong> 用过这么多的检测方式之后回头看，最不会骗人的信号其实是最朴素的那个——代码能不能编译、原项目的单测过不过。它是项目维护者亲手写的、长期演进沉淀下来的行为契约，比任何我们后加的结构检查都更权威、更难被钻空子。Checklist 解决的是”结构改对没”，但”行为有没有变”这个重构的根本前提，最终还是要靠项目原生的编译加单测来守。任何评测如果绕开了这一关、只在静态层面比对结构，得到的结论都是不牢靠的。</li>
+<li><strong>Checklist 比 BP 难做一个数量级。</strong> BP 是确定性的——跑测试、比数字，逻辑清晰。但 Checklist 要在”不冤枉合法实现”和”不放过没做到的模型”之间走钢丝。Shape over Names 原则听起来简单，在实际 80 条记录里落地时才发现反模式层出不穷。</li>
+<li><strong>Ground Truth 自检是不可省略的兜底。</strong> 每一版 Checklist 都必须让 Ground Truth 自己先过——如果连真人写的最优实现都过不了你的检查，那检查一定写得太苛。这条规则帮我们在早期就干掉了大量”看起来合理但实际偏颇”的检查项。</li>
+<li><strong>数据集区分度要刻意设计。</strong> 自然分布的提交大部分太简单或太难，真正能区分模型的”中间地带”需要精心挑选。53.6% 全过加 16.7% 全挂，等于 70% 的数据没有区分度，这个教训让我们在下一批数据抽取中彻底改了配比策略。</li>
+<li><strong>可复现性是评测系统的命门。</strong> 指令不固定、Docker 环境有波动、Checklist 迭代后没同步重跑——任何一个环节的非确定性，都会让不同批次之间的对比变得没有意义。做评测不是做一次性实验，而是做一套<strong>可持续运行的基础设施</strong>。</li>
+</ol>
+<h2 id="写在最后">写在最后</h2>
+<p>代码重构是Coding Agent 日常使用中最高频的场景之一，这套评测体系的核心价值在于：<strong>用确定性手段（隔离环境测试 + Tree-sitter 解析语法树）而非主观判断，把重构评测变成一个可复现、可持续、可信赖的 0/1 判定。</strong> 它帮助我们精确定位不同模型在不同语言、不同重构类型上的能力边界，也在持续驱动我们的 agent 策略迭代。</p>
+<p>希望这些思路对做类似评测工作的同学有参考价值。</p>
+<hr>
+<p>韩曙斌</p>
+<p>写于 2026.6.16</p>  </div> <div class="image-lightbox" data-image-lightbox data-open-label="查看大图" role="dialog" aria-modal="true" aria-label="图片预览" hidden> <button class="image-lightbox__close" type="button" data-lightbox-close aria-label="关闭" title="关闭"> <span aria-hidden="true">×</span> </button> <div class="image-lightbox__stage" data-lightbox-stage> <div class="image-lightbox__frame" data-lightbox-frame> <img data-lightbox-image alt=""> </div> </div> <div class="image-lightbox__controls" data-lightbox-controls> <button type="button" data-lightbox-zoom-out aria-label="缩小" title="缩小"> <span aria-hidden="true">−</span> </button> <span data-lightbox-zoom-value>100%</span> <button type="button" data-lightbox-zoom-in aria-label="放大" title="放大"> <span aria-hidden="true">+</span> </button> </div> <p class="image-lightbox__caption" data-lightbox-caption hidden></p> </div> <script>
+	(() => {
+		const article = document.querySelector('.article-body');
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const preview = lightbox?.querySelector('[data-lightbox-image]');
+		const caption = lightbox?.querySelector('[data-lightbox-caption]');
+		const closeButton = lightbox?.querySelector('[data-lightbox-close]');
+		const stage = lightbox?.querySelector('[data-lightbox-stage]');
+		const frame = lightbox?.querySelector('[data-lightbox-frame]');
+		const zoomInButton = lightbox?.querySelector('[data-lightbox-zoom-in]');
+		const zoomOutButton = lightbox?.querySelector('[data-lightbox-zoom-out]');
+		const zoomValue = lightbox?.querySelector('[data-lightbox-zoom-value]');
+		if (
+			!article ||
+			!lightbox ||
+			!preview ||
+			!caption ||
+			!closeButton ||
+			!stage ||
+			!frame ||
+			!zoomInButton ||
+			!zoomOutButton ||
+			!zoomValue
+		)
+			return;
+
+		let activeTrigger = null;
+		let basePreviewWidth = 0;
+		let basePreviewHeight = 0;
+		let previewScale = 1;
+		let gestureStartScale = 1;
+		const openLabel = lightbox.dataset.openLabel || 'View larger image';
+		const minScale = 1;
+		const maxScale = 2;
+		const scaleStep = 0.25;
+
+		const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+		const rememberBaseSize = () => {
+			const rect = preview.getBoundingClientRect();
+			if (!preview.naturalWidth || rect.width < 24 || rect.height < 24) return;
+			basePreviewWidth = rect.width / previewScale;
+			basePreviewHeight = rect.height / previewScale;
+		};
+
+		const updateZoomControls = () => {
+			zoomValue.textContent = `${Math.round(previewScale * 100)}%`;
+			zoomOutButton.disabled = !basePreviewWidth || previewScale <= minScale;
+			zoomInButton.disabled = !basePreviewWidth || previewScale >= maxScale;
+
+			if (previewScale <= minScale || !basePreviewWidth) {
+				frame.style.removeProperty('--lightbox-frame-width');
+				frame.style.removeProperty('--lightbox-frame-height');
+				preview.style.removeProperty('--lightbox-image-scale');
+				delete lightbox.dataset.zoomed;
+				return;
+			}
+
+			frame.style.setProperty('--lightbox-frame-width', `${Math.round(basePreviewWidth * previewScale)}px`);
+			frame.style.setProperty('--lightbox-frame-height', `${Math.round(basePreviewHeight * previewScale)}px`);
+			preview.style.setProperty('--lightbox-image-scale', String(previewScale));
+			lightbox.dataset.zoomed = 'true';
+		};
+
+		const setPreviewScale = (nextScale) => {
+			if (lightbox.hidden) return;
+			if (!basePreviewWidth) rememberBaseSize();
+			if (!basePreviewWidth) return;
+
+			const scale = clamp(Math.round(nextScale * 100) / 100, minScale, maxScale);
+			if (Math.abs(scale - previewScale) < 0.01) return;
+			const scrollXRatio =
+				stage.scrollWidth > stage.clientWidth ? (stage.scrollLeft + stage.clientWidth / 2) / stage.scrollWidth : 0.5;
+			const scrollYRatio =
+				stage.scrollHeight > stage.clientHeight ? (stage.scrollTop + stage.clientHeight / 2) / stage.scrollHeight : 0.5;
+
+			previewScale = scale;
+			updateZoomControls();
+			window.requestAnimationFrame(() => {
+				if (previewScale <= minScale) {
+					stage.scrollLeft = 0;
+					stage.scrollTop = 0;
+					return;
+				}
+				stage.scrollLeft = scrollXRatio * stage.scrollWidth - stage.clientWidth / 2;
+				stage.scrollTop = scrollYRatio * stage.scrollHeight - stage.clientHeight / 2;
+			});
+		};
+
+		const resetPreviewZoom = () => {
+			basePreviewWidth = 0;
+			basePreviewHeight = 0;
+			previewScale = 1;
+			stage.scrollLeft = 0;
+			stage.scrollTop = 0;
+			updateZoomControls();
+		};
+
+		const closeLightbox = () => {
+			if (lightbox.hidden) return;
+			lightbox.hidden = true;
+			preview.removeAttribute('src');
+			delete lightbox.dataset.imageShape;
+			resetPreviewZoom();
+			document.documentElement.classList.remove('has-image-lightbox');
+			activeTrigger?.focus({ preventScroll: true });
+			activeTrigger = null;
+		};
+
+		const openLightbox = (image) => {
+			activeTrigger = image;
+			resetPreviewZoom();
+			preview.src = image.currentSrc || image.src;
+			preview.alt = image.alt || '';
+			const naturalWidth = image.naturalWidth || 0;
+			const naturalHeight = image.naturalHeight || 0;
+			lightbox.dataset.imageShape = naturalHeight > naturalWidth * 1.25 ? 'tall' : 'fit';
+			const captionText = image.alt?.trim() || image.title?.trim() || '';
+			caption.textContent = captionText;
+			caption.hidden = !captionText;
+			lightbox.hidden = false;
+			document.documentElement.classList.add('has-image-lightbox');
+			const primePreviewSize = () => {
+				window.requestAnimationFrame(() => {
+					rememberBaseSize();
+					updateZoomControls();
+				});
+			};
+			if (preview.complete && preview.naturalWidth) primePreviewSize();
+			else preview.addEventListener('load', primePreviewSize, { once: true });
+			closeButton.focus({ preventScroll: true });
+		};
+
+		for (const image of article.querySelectorAll('img')) {
+			if (image.closest('a')) continue;
+
+			const labelText = image.alt?.trim() || image.title?.trim();
+			image.dataset.lightboxTrigger = '';
+			image.setAttribute('role', 'button');
+			image.setAttribute('aria-label', labelText ? `${openLabel}: ${labelText}` : openLabel);
+			if (!image.hasAttribute('tabindex')) image.tabIndex = 0;
+
+			image.addEventListener('click', () => openLightbox(image));
+			image.addEventListener('keydown', (event) => {
+				if (event.key !== 'Enter' && event.key !== ' ') return;
+				event.preventDefault();
+				openLightbox(image);
+			});
+		}
+
+		closeButton.addEventListener('click', closeLightbox);
+		zoomInButton.addEventListener('click', () => setPreviewScale(previewScale + scaleStep));
+		zoomOutButton.addEventListener('click', () => setPreviewScale(previewScale - scaleStep));
+		stage.addEventListener(
+			'wheel',
+			(event) => {
+				if (lightbox.hidden || !(event.ctrlKey || event.metaKey)) return;
+				event.preventDefault();
+				setPreviewScale(previewScale * Math.exp(-event.deltaY * 0.006));
+			},
+			{ passive: false },
+		);
+		stage.addEventListener('gesturestart', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			gestureStartScale = previewScale;
+		});
+		stage.addEventListener('gesturechange', (event) => {
+			if (lightbox.hidden) return;
+			event.preventDefault();
+			setPreviewScale(gestureStartScale * event.scale);
+		});
+		lightbox.addEventListener('click', (event) => {
+			if (event.target === lightbox || event.target === stage) closeLightbox();
+		});
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape') closeLightbox();
+			if (!lightbox.hidden && (event.key === '+' || event.key === '=')) {
+				event.preventDefault();
+				setPreviewScale(previewScale + scaleStep);
+			}
+			if (!lightbox.hidden && (event.key === '-' || event.key === '_')) {
+				event.preventDefault();
+				setPreviewScale(previewScale - scaleStep);
+			}
+			if (!lightbox.hidden && event.key === '0') {
+				event.preventDefault();
+				setPreviewScale(1);
+			}
+			if (event.key === 'Tab' && !lightbox.hidden) {
+				event.preventDefault();
+				const focusable = [closeButton, zoomOutButton, zoomInButton].filter((item) => !item.disabled);
+				const currentIndex = focusable.indexOf(document.activeElement);
+				const nextIndex =
+					event.shiftKey ?
+						(currentIndex <= 0 ? focusable.length - 1 : currentIndex - 1)
+					:	(currentIndex + 1) % focusable.length;
+				focusable[nextIndex]?.focus({ preventScroll: true });
+			}
+		});
+	})();
+</script> <script>(function(){const articleId = "benchmarks/refactor-bench-eval";
+const endpoint = "https://lens-frontier-pageviews.pages.dev/pageview";
+const siteId = "lens-frontier";
+
+			(() => {
+				if (!endpoint) return;
+
+				const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+				if (doNotTrack) return;
+
+				const payload = JSON.stringify({
+					siteId,
+					articleId,
+					path: window.location.pathname,
+				});
+				let posted = false;
+
+				const postPageview = (preferBeacon = false) => {
+					if (posted) return;
+					posted = true;
+
+					if (preferBeacon && 'sendBeacon' in navigator) {
+						const blob = new Blob([payload], { type: 'text/plain;charset=UTF-8' });
+						if (navigator.sendBeacon(endpoint, blob)) return;
+					}
+
+					const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+					const timeout = controller ? window.setTimeout(() => controller.abort(), 3500) : null;
+
+					fetch(endpoint, {
+						method: 'POST',
+						body: payload,
+						headers: { 'Content-Type': 'application/json' },
+						keepalive: true,
+						credentials: 'omit',
+						signal: controller?.signal,
+					})
+						.then((response) => {
+							if (!response.ok) return null;
+							return response.json().catch(() => null);
+						})
+						.then((data) => {
+							if (!data) return;
+							window.__lensFrontierRecordedPageviews ??= new Map();
+							window.__lensFrontierRecordedPageviews.set(articleId, Number(data.viewCount || 0));
+							window.dispatchEvent(
+								new CustomEvent('lens-frontier:pageview-recorded', { detail: { articleId, viewCount: data.viewCount } }),
+							);
+						})
+						.catch(() => {})
+						.finally(() => {
+							if (timeout) window.clearTimeout(timeout);
+						});
+				};
+
+				const schedulePageview = () => {
+					if ('requestIdleCallback' in window) {
+						window.requestIdleCallback(() => postPageview(), { timeout: 2000 });
+						return;
+					}
+					window.setTimeout(postPageview, 800);
+				};
+				const flushPageview = () => postPageview(true);
+
+				if (document.readyState === 'complete') schedulePageview();
+				else window.addEventListener('load', schedulePageview, { once: true });
+				window.addEventListener('pagehide', flushPageview, { once: true });
+				document.addEventListener('visibilitychange', () => {
+					if (document.visibilityState === 'hidden') flushPageview();
+				});
+			})();
+		})();</script> <script type="module" src="/_astro/ArticleLayout.astro_astro_type_script_index_0_lang.DXwpr4_M.js"></script> </article>  </main> <footer class="site-footer site-footer--horizon"> <div class="horizon-footer__main"> <div class="horizon-footer__brand"> <a class="horizon-footer__identity" href="/zh/"> <strong>Lens Frontier</strong> <span>模型评测数据平台</span> </a> <p>发布评测研究；榜单与 Data Card 仅在资料审核完成后上线。</p> </div> <nav class="horizon-footer__nav" aria-label="Footer navigation"> <div class="horizon-footer__nav-group"> <span>探索</span> <a href="/zh/#leaderboard">榜单</a><a href="/zh/benchmarks/">Benchmarks</a> </div><div class="horizon-footer__nav-group"> <span>研究</span> <a href="/zh/blog/">博客</a><a href="/zh/blog/tags/">研究主题</a><a href="/zh/timeline/">时间线</a> </div><div class="horizon-footer__nav-group"> <span>实验室</span> <a href="/zh/about/">关于</a> </div> </nav> </div> <div class="horizon-footer__bottom"> <span>© 2026 Lens Frontier</span> <div> <a href="https://github.com/Lens-Frontier/Lens-Frontier.github.io" target="_blank" rel="noreferrer">GitHub</a> <a href="/zh/rss.xml">RSS</a> </div> <a href="#top">TOP <span aria-hidden="true">↑</span></a> </div> </footer> </div> <script>(function(){const lang = "zh";
+
+	(() => {
+		const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1';
+		const scrollMilestones = [25, 50, 75, 90, 100];
+
+		const article = document.querySelector('[data-analytics-page="article"]');
+		const articleParams =
+			article ?
+				{
+					content_type: article.dataset.analyticsCollection,
+					item_id: article.dataset.analyticsArticleId,
+					language: article.dataset.analyticsLang || lang,
+				}
+			:	{ language: lang };
+
+		const sendEvent = (name, params = {}) => {
+			if (doNotTrack || typeof window.gtag !== 'function') return;
+			window.gtag('event', name, {
+				...articleParams,
+				...params,
+			});
+		};
+
+		const pageKind = () => {
+			if (article) return 'article';
+			const segments = window.location.pathname.split('/').filter(Boolean);
+			const contentSegments = segments[0] === 'blog' ? segments.slice(1) : segments;
+			if (contentSegments[0] === 'zh' || contentSegments[0] === 'en') contentSegments.shift();
+			return contentSegments[0] || 'home';
+		};
+
+		const linkPath = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? url.pathname : undefined;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const linkDomain = (href) => {
+			try {
+				const url = new URL(href, window.location.href);
+				return url.origin === window.location.origin ? undefined : url.hostname;
+			} catch {
+				return undefined;
+			}
+		};
+
+		const classifyLink = (link) => {
+			if (link.closest('.brand')) return { event: 'lf_navigation_click', type: 'brand' };
+			if (link.closest('.nav')) return { event: 'lf_navigation_click', type: 'primary_nav' };
+			if (link.closest('.lang-switch')) return { event: 'lf_language_switch', type: 'language_switch' };
+			if (link.closest('.footer-links')) return { event: 'lf_navigation_click', type: 'footer_nav' };
+			if (link.closest('.channel-list')) return { event: 'lf_content_discovery', type: 'home_channel' };
+			if (link.closest('.entry-row') && link.matches('.entry-title')) return { event: 'lf_content_discovery', type: 'entry_title' };
+			if (link.closest('.tag-cloud')) return { event: 'lf_tag_click', type: 'tag_cloud' };
+			if (link.closest('.tag-list')) return { event: 'lf_tag_click', type: 'tag_list' };
+			if (link.closest('.article-actions')) return { event: 'lf_article_resource_click', type: 'article_resource' };
+			if (link.closest('.authors')) return { event: 'lf_author_profile_click', type: 'author_profile' };
+			if (link.closest('.article-body')) return { event: 'lf_article_body_link_click', type: 'article_body_link' };
+			return linkDomain(link.href) ? { event: 'lf_outbound_click', type: 'outbound' } : { event: 'lf_internal_click', type: 'internal' };
+		};
+
+		const lightbox = document.querySelector('[data-image-lightbox]');
+		const zoomValue = document.querySelector('[data-lightbox-zoom-value]');
+		let imageLightboxOpen = false;
+
+		const recordImageOpen = (imageTrigger) => {
+			const images = [...document.querySelectorAll('.article-body img[data-lightbox-trigger]')];
+			imageLightboxOpen = true;
+			sendEvent('lf_article_image_open', {
+				image_index: images.indexOf(imageTrigger) + 1,
+				image_count: images.length,
+			});
+		};
+
+		const recordImageZoom = (direction) => {
+			window.setTimeout(() => {
+				sendEvent('lf_article_image_zoom', {
+					zoom_direction: direction,
+					zoom_value: zoomValue?.textContent,
+				});
+			}, 0);
+		};
+
+		if (lightbox && typeof MutationObserver !== 'undefined') {
+			new MutationObserver(() => {
+				if (!imageLightboxOpen || !lightbox.hidden) return;
+				imageLightboxOpen = false;
+				sendEvent('lf_article_image_close');
+			}).observe(lightbox, { attributes: true, attributeFilter: ['hidden'] });
+		}
+
+		document.addEventListener('click', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.closest('.article-body img[data-lightbox-trigger]');
+			if (imageTrigger) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			const zoomIn = target.closest('[data-lightbox-zoom-in]');
+			const zoomOut = target.closest('[data-lightbox-zoom-out]');
+			if (zoomIn || zoomOut) {
+				recordImageZoom(zoomIn ? 'in' : 'out');
+				return;
+			}
+
+			const link = target.closest('a[href]');
+			if (!link) return;
+
+			const classification = classifyLink(link);
+			sendEvent(classification.event, {
+				link_type: classification.type,
+				link_path: linkPath(link.href),
+				link_domain: linkDomain(link.href),
+				page_kind: pageKind(),
+			});
+		});
+
+		document.addEventListener('keydown', (event) => {
+			const target = event.target instanceof Element ? event.target : null;
+			if (!target) return;
+
+			const imageTrigger = target.matches('.article-body img[data-lightbox-trigger]') ? target : null;
+			if (imageTrigger && (event.key === 'Enter' || event.key === ' ')) {
+				recordImageOpen(imageTrigger);
+				return;
+			}
+
+			if (!imageLightboxOpen) return;
+			if (event.key === '+' || event.key === '=') recordImageZoom('in');
+			if (event.key === '-' || event.key === '_') recordImageZoom('out');
+			if (event.key === '0') recordImageZoom('reset');
+		});
+
+		document.addEventListener(
+			'wheel',
+			(event) => {
+				const target = event.target instanceof Element ? event.target : null;
+				if (!imageLightboxOpen || !target?.closest('[data-lightbox-stage]') || !(event.ctrlKey || event.metaKey)) return;
+				recordImageZoom(event.deltaY < 0 ? 'in' : 'out');
+			},
+			{ passive: true },
+		);
+
+		if (!article) return;
+
+		let maxDepth = 0;
+		let activeSeconds = 0;
+		const sentScrollMilestones = new Set();
+		let sentEngagedRead = false;
+		let scrollTickScheduled = false;
+
+		const scrollDepth = () => {
+			const scrollable = document.documentElement.scrollHeight - window.innerHeight;
+			if (scrollable <= 0) return 100;
+			return Math.min(100, Math.max(0, Math.round((window.scrollY / scrollable) * 100)));
+		};
+
+		const maybeSendReadingEvents = () => {
+			maxDepth = Math.max(maxDepth, scrollDepth());
+			for (const milestone of scrollMilestones) {
+				if (maxDepth < milestone || sentScrollMilestones.has(milestone)) continue;
+				sentScrollMilestones.add(milestone);
+				sendEvent('lf_article_scroll_depth', {
+					scroll_depth: milestone,
+					active_seconds: activeSeconds,
+				});
+			}
+
+			if (!sentEngagedRead && activeSeconds >= 45 && maxDepth >= 50) {
+				sentEngagedRead = true;
+				sendEvent('lf_article_engaged_read', {
+					scroll_depth: maxDepth,
+					active_seconds: activeSeconds,
+				});
+			}
+		};
+
+		const tick = () => {
+			if (document.visibilityState === 'visible') activeSeconds += 1;
+			maybeSendReadingEvents();
+		};
+
+		const scheduleScrollRead = () => {
+			if (scrollTickScheduled) return;
+			scrollTickScheduled = true;
+			window.requestAnimationFrame(() => {
+				scrollTickScheduled = false;
+				maybeSendReadingEvents();
+			});
+		};
+
+		window.addEventListener('scroll', scheduleScrollRead, { passive: true });
+		document.addEventListener('visibilitychange', maybeSendReadingEvents);
+		window.setInterval(tick, 1000);
+		maybeSendReadingEvents();
+	})();
+})();</script> <script type="module">const o=window.matchMedia("(prefers-color-scheme: dark)"),c=document.querySelector("[data-theme-color]"),l=(e,t=!1)=>{document.documentElement.dataset.theme=e,document.documentElement.style.colorScheme=e,c?.setAttribute("content",e==="dark"?"#171a19":"#f4f6f5"),document.querySelectorAll("[data-theme-toggle]").forEach(a=>{const r=e==="dark"?a.dataset.lightLabel:a.dataset.darkLabel;r&&(a.setAttribute("aria-label",r),a.title=r),a.setAttribute("aria-pressed",e==="dark"?"true":"false")}),t&&localStorage.setItem("lens-frontier-theme",e),window.dispatchEvent(new CustomEvent("lens-frontier-theme-change",{detail:{theme:e}}))};document.querySelectorAll("[data-theme-toggle]").forEach(e=>{e.addEventListener("click",()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";l(t,!0)})});o.addEventListener("change",e=>{localStorage.getItem("lens-frontier-theme")||l(e.matches?"dark":"light")});l(document.documentElement.dataset.theme==="dark"?"dark":"light");document.querySelectorAll(".mobile-nav").forEach(e=>{e.querySelectorAll("a").forEach(t=>t.addEventListener("click",()=>e.removeAttribute("open")))});</script> </body> </html>
