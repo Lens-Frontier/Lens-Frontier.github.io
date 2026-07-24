@@ -260,6 +260,7 @@ for (const file of htmlFiles) {
 	const rel = relative(root, file);
 	const distRel = relative(dist, file).split('\\').join('/');
 	const html = await readFile(file, 'utf8');
+	if (html.includes('<title>Page moved | Lens Frontier</title>')) continue;
 	const $ = cheerio.load(html);
 	const ids = pageIds($);
 	const firstSegment = distRel.split('/')[0];
