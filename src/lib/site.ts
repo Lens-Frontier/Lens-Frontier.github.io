@@ -2,7 +2,7 @@ export const languages = ['zh', 'en'] as const;
 export type Language = (typeof languages)[number];
 
 export const defaultLanguage: Language = 'zh';
-export const repositoryUrl = import.meta.env.PUBLIC_REPOSITORY_URL ?? 'https://github.com/Lens-Frontier/blog';
+export const repositoryUrl = import.meta.env.PUBLIC_REPOSITORY_URL ?? 'https://github.com/Lens-Frontier/Lens-Frontier.github.io';
 
 export const sites: Record<Language, { title: string; description: string; htmlLang: string; locale: string }> = {
 	zh: {
