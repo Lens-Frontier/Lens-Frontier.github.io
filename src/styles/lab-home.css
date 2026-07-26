@@ -4314,6 +4314,35 @@ body:has(.observatory-home) .nav a[aria-current='page'] {
 	font-size: 9px;
 }
 
+@media (max-width: 1080px) {
+	.obs-journal__list > a {
+		grid-template-areas:
+			'meta title action'
+			'meta summary action';
+		grid-template-columns: 88px minmax(0, 1fr) 92px;
+		grid-template-rows: auto auto;
+		gap: 8px 20px;
+	}
+
+	.obs-journal__list > a > header {
+		grid-area: meta;
+		align-self: start;
+	}
+
+	.obs-journal__list > a > h3 {
+		grid-area: title;
+	}
+
+	.obs-journal__list > a > p {
+		grid-area: summary;
+	}
+
+	.obs-journal__list > a > footer {
+		grid-area: action;
+		align-self: center;
+	}
+}
+
 .obs-method {
 	display: block;
 	padding: 64px max(24px, calc((100% - var(--obs-container)) / 2)) 72px;
