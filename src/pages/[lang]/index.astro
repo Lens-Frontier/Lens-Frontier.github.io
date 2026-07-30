@@ -528,11 +528,10 @@ const initialDefaultModelNames = new Set(initialVisibleLeaders.map((leader) => l
 						<div class="chart-lab__selection-list" data-compare-selection-list aria-live="polite"></div>
 						<button type="button" data-compare-selection-reset>{copy.resetSelection}</button>
 					</div>
-					<div class="chart-lab__signal-list" data-bench-signal-list role="list" aria-label={copy.benchmarkSignal}>
+					<div class="chart-lab__signal-list" data-bench-signal-list aria-label={copy.benchmarkSignal}>
 						{featuredBoardPayload.map((board, index) => (
 							<button
 								type="button"
-								role="listitem"
 								data-bench-signal={board.id}
 								data-board-name={board.name}
 								aria-pressed={board.name === initialBoard?.name ? 'true' : 'false'}

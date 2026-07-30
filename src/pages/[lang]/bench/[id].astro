@@ -381,13 +381,12 @@ const evaluationContract = lang === 'zh'
 							<header>
 								<div><h3>{copy.modelSelection}</h3><span>{leaders.length}</span></div>
 							</header>
-							<div class="bench-model-list" role="list">
+							<div class="bench-model-list">
 								{leaderPayload.map((leader, index) => (
 									<button
 										type="button"
 										class:list={{ 'is-active': index === 0 }}
 										data-model-select={leader.model}
-										role="listitem"
 										aria-pressed={index === 0 ? 'true' : 'false'}
 									>
 										<span class:list={['bench-model-state', { 'is-active': index === 0 }]} aria-hidden="true"></span>
@@ -543,11 +542,11 @@ const evaluationContract = lang === 'zh'
 							{publicSources.map((source) => <a href={source.href} target="_blank" rel="noreferrer">{source.label}<span aria-hidden="true">↗</span></a>)}
 						</nav>
 					</div>
-					<dl>
+					<div class="bench-public-card__facts">
 						{publicDataCard.fields.map((field) => (
-							<div><dt>{field.label}</dt><dd>{field.value}</dd>{field.note && <p>{field.note}</p>}</div>
+							<div><strong>{field.label}</strong><span>{field.value}</span>{field.note && <p>{field.note}</p>}</div>
 						))}
-					</dl>
+					</div>
 				</div>
 
 				<footer>
