@@ -34,6 +34,7 @@ const benchmarkPath = localizedPath(lang, '/benchmarks/');
 const blogPath = localizedPath(lang, '/blog/');
 const currentPath = Astro.url.pathname;
 const mobileNavLabel = lang === 'zh' ? '菜单' : 'Menu';
+const skipToContentLabel = lang === 'zh' ? '跳到主要内容' : 'Skip to main content';
 const themeLabels = lang === 'zh'
 	? { light: '切换到浅色模式', dark: '切换到暗色模式' }
 	: { light: 'Switch to light mode', dark: 'Switch to dark mode' };
@@ -79,6 +80,7 @@ function alternatePathFor(targetLang: Language) {
 		<link rel="icon" type="image/svg+xml" href={path('/favicon.svg')} />
 	</head>
 	<body id="top">
+		<a class="skip-link" href="#main-content">{skipToContentLabel}</a>
 		<div class="shell">
 			<header class="site-header">
 				<div class="site-header__inner">
@@ -133,7 +135,7 @@ function alternatePathFor(targetLang: Language) {
 					</div>
 				</div>
 			</header>
-			<main>
+			<main id="main-content" tabindex="-1">
 				<slot />
 			</main>
 			{showFooter && <HorizonFooter {lang} />}
