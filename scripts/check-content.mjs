@@ -8,7 +8,7 @@ const collections = ['papers', 'benchmarks', 'opinions'];
 const tagPattern = /^[a-z0-9]+(?:[-.][a-z0-9]+)*$/;
 const languagePattern = /^(zh|en)$/;
 const translationKeyPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const markdownImagePattern = /!\[[^\]\n]+\]\(([^)\n]+)\)/g;
+const markdownImagePattern = /!\[([^\]\n]*)\]\(([^)\n]+)\)/g;
 const htmlImagePattern = /<img\b[^>]*\bsrc\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))/gi;
 const remotePattern = /^(?:https?:|mailto:|#)/i;
 const seenTranslationKeys = new Map();
@@ -41,12 +41,25 @@ function cleanImageTarget(value) {
 	return value.trim().replace(/^<|>$/g, '').split(/\s+/)[0].split(/[?#]/)[0];
 }
 
-function articleImageTargets(text) {
-	const targets = [...text.matchAll(markdownImagePattern)].map((match) => cleanImageTarget(match[1]));
+function articleImages(text) {
+	const images = [...text.matchAll(markdownImagePattern)].map((match) => ({
+		alt: match[1].trim(),
+		target: cleanImageTarget(match[2]),
+	}));
 	for (const match of text.matchAll(htmlImagePattern)) {
-		targets.push(cleanImageTarget(match[1] ?? match[2] ?? match[3] ?? ''));
+		const tag = match[0];
+		const alt = /\balt\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(tag);
+		images.push({
+			alt: (alt?.[1] ?? alt?.[2] ?? '').trim(),
+			target: cleanImageTarget(match[1] ?? match[2] ?? match[3] ?? ''),
+		});
 	}
-	return targets.filter(Boolean);
+	return images.filter((image) => image.target);
+}
+
+function hasMeaningfulImageAlt(alt) {
+	if (alt.length < 5) return false;
+	return !/^(?:image|photo|picture|figure|图|图片|照片|配图)$/i.test(alt);
 }
 
 function dateTime(value) {
@@ -175,7 +188,10 @@ for (const collection of collections) {
 		}
 
 		const expectedAssetDir = resolve(root, 'src', 'assets', 'posts', collection, slug);
-		for (const target of articleImageTargets(text)) {
+		for (const { target, alt } of articleImages(text)) {
+			if (!hasMeaningfulImageAlt(alt)) {
+				errors.push(`Article image needs a descriptive alt text (not a generic label): ${target} in ${relFile}`);
+			}
 			if (remotePattern.test(target)) continue;
 			if (target.startsWith('/')) {
 				errors.push(`Article image should use a relative path, not an absolute path: ${target} in ${relFile}`);

@@ -28,5 +28,14 @@ test('keyboard users can skip navigation and operate the theme toggle', async ({
 	const themeToggle = page.getByRole('button', { name: '切换到暗色模式' });
 	await themeToggle.focus();
 	await page.keyboard.press('Enter');
-	await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('article images expose meaningful text alternatives and keyboard names', async ({ page }) => {
+  await page.goto('/zh/opinions/t2i-multi-module-evaluation/', { waitUntil: 'domcontentloaded' });
+  const images = page.locator('.article-body img');
+  await expect(images).toHaveCount(1);
+  await expect(images).toHaveAttribute('alt', '评估系统整体流程');
+  await expect(images).toHaveAttribute('role', 'button');
+  await expect(images).toHaveAttribute('aria-label', '查看大图: 评估系统整体流程');
 });
