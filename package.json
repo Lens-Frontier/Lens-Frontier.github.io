@@ -19,6 +19,7 @@
     "check:dist": "node scripts/check-dist.mjs",
     "check:worker": "node --check workers/pageviews/worker.js && node scripts/check-pageview-worker.mjs",
     "check:analytics": "node scripts/check-analytics-smoke.mjs",
+		"check:a11y": "playwright test",
     "check:syntax": "node scripts/run-checks.mjs syntax",
     "check:quality": "node scripts/run-checks.mjs quality",
     "images:check": "node scripts/optimize-images.mjs --check",
@@ -37,6 +38,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.62.0",
     "cheerio": "^1.2.0",
     "markdownlint-cli2": "^0.22.1",
     "sharp": "^0.34.5",
